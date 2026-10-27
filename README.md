@@ -72,9 +72,11 @@ A job search has three failure modes that generic tools don't address:
 - **Job-description tailoring:** claims are re-ranked by requirement match, role
   relevance, evidence strength and bullet quality. Projects compete for space by
   relevance; every paid experience keeps its place.
-- **One-page PDF and DOCX:** the document is rendered and its pages counted, and
+- **One-page PDF plus editable DOCX:** the PDF is rendered and its pages counted, and
   the lowest-value content is removed until it fits. The type is never shrunk to
   make it fit. Tests read the PDF back with a second, ATS-style text extractor.
+  DOCX uses the same fitted content, but its layout is not page-fitted in Word;
+  check its pagination before submitting. Use the PDF for the verified one-page output.
 
 ### Local workflow
 

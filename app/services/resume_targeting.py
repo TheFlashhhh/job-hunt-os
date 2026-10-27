@@ -242,6 +242,14 @@ class ResumeTargetingEngine:
             dimensions["deemphasis_penalty"] = -penalty
             total -= penalty
 
+        # An adjacent family is a candidate, not evidence that the posting
+        # needs that work. Scale its whole utility (including generic strength
+        # and metrics), so those bonuses cannot swamp missing relevance.
+        relevance = self._adjacent_relevance(claim, text)
+        adjusted = total * relevance
+        dimensions["relevance_adjustment"] = adjusted - total
+        total = adjusted
+
         # The candidate's own standing preference about this project, applied
         # LAST so it scales the finished utility rather than one dimension of
         # it, and FADED by how hard this posting pulls for this line. A
@@ -276,6 +284,22 @@ class ResumeTargetingEngine:
             ownership_downgraded=downgraded,
             strength=getattr(claim, "strength", "SOLID"),
         )
+
+    def _adjacent_relevance(self, claim: Any, text: str) -> float:
+        rules = self._spec.get("adjacent_family_requirements") or {}
+        families = set(getattr(claim, "role_families", ()) or ())
+        matched = families & set(self.profile.claim_role_families)
+        if not matched or matched - rules.keys() or not self.profile.jd_tokens:
+            return 1.0
+        # Require capability phrases in BOTH the posting and the safe wording.
+        # Generic Python/testing vocabulary is deliberately not a capability
+        # signal in config. No title, owner name or project ID participates.
+        words = _content_words(text)
+        jd = self._jd_words()
+        signals = {str(s) for family in matched for s in rules[family]}
+        hits = sum(bool(parts := _content_words(s)) and parts <= words and parts <= jd
+                   for s in signals)
+        return 0.25 + 0.75 * min(1.0, hits / 2.0)
 
     def _family_relevance(self, claim: Any) -> float:
         wanted = self.profile.claim_role_families

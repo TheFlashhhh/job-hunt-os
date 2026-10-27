@@ -675,6 +675,15 @@ archetypes:
     deemphasized_categories: [GEOSPATIAL, VISUALIZATION, RESPONSIBLE_AI]
     claim_role_families:
       [AI_SOFTWARE_ENGINEER, AI_ENGINEER, SWE, ML_ENGINEER, DATA_ENGINEERING]
+    # Adjacent engineering work earns full utility only when at least two
+    # capabilities occur in BOTH the JD and the claim. A single API mention
+    # is supporting relevance; Python/testing alone is not AI evidence.
+    # Core AI/ML claims and posting-free bases retain their ordinary utility.
+    adjacent_family_requirements:
+      SWE: [backend, platform, REST APIs, SQLAlchemy, SQLite, transactions,
+            concurrency, retries, timeouts, ingestion, migrations]
+      DATA_ENGINEERING: [ingestion, normalization, deduplication, pipelines,
+                         ETL, SQL, schema, batch, streaming]
     summary_template: >-
       {degree_short} candidate at {institution} with hands-on experience building
       and testing backend software alongside applied machine-learning components.
