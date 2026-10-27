@@ -120,6 +120,8 @@ NAME_SIZE = 22.0
 HEADING_SIZE = 11.5
 #: Small caps: the letters after the first are drawn at this fraction.
 SMALL_CAP_RATIO = 0.78
+#: A section heading's line: the label plus room for the rule beneath it.
+SECTION_RULE_HEIGHT = HEADING_SIZE + 4.5
 
 
 def small_caps(text: str, *, size: float) -> str:
@@ -166,7 +168,7 @@ class SectionRule(Flowable):
             spaceAfter=0,
         )
         self._para = Paragraph(small_caps(label, size=HEADING_SIZE), self._style)
-        self.height = HEADING_SIZE + 4.5
+        self.height = SECTION_RULE_HEIGHT
 
     def wrap(self, available_width: float, available_height: float):
         self.width = available_width
@@ -221,11 +223,11 @@ _METRIC_RE = re.compile("|".join(f"(?:{p})" for p in _METRIC_PATTERNS), re.IGNOR
 MAX_EMPHASIS_PER_BULLET = 3
 
 
-def emphasize(text: str) -> str:
-    """Bold the measured figures already present in a bullet.
+def emphasis_spans(text: str) -> list[tuple[int, int]]:
+    """The (start, end) spans of `text` that :func:`emphasize` bolds.
 
-    Returns ReportLab markup with the source text escaped. Only verbatim
-    substrings are wrapped; nothing is rewritten, rounded or added.
+    Shared by the PDF markup and the DOCX runs, so both formats bold the same
+    figures.
     """
     matches: list[tuple[int, int]] = []
     for match in _METRIC_RE.finditer(text):
@@ -235,7 +237,16 @@ def emphasize(text: str) -> str:
         if matches and start < matches[-1][1]:
             continue  # overlapping run
         matches.append((start, end))
+    return matches
 
+
+def emphasize(text: str) -> str:
+    """Bold the measured figures already present in a bullet.
+
+    Returns ReportLab markup with the source text escaped. Only verbatim
+    substrings are wrapped; nothing is rewritten, rounded or added.
+    """
+    matches = emphasis_spans(text)
     if not matches:
         return escape(text)
 
@@ -485,7 +496,9 @@ def contact_paragraph(items: list[tuple[str, str | None]]) -> str:
     return separator.join(parts)
 
 
-def add_docx_hyperlink(paragraph: Any, text: str, href: str) -> Any:
+def add_docx_hyperlink(
+    paragraph: Any, text: str, href: str, *, bold: bool = False, italic: bool = False
+) -> Any:
     """Append a real hyperlink run to a python-docx paragraph.
 
     python-docx has no public hyperlink API, so the relationship and the `w:hyperlink`
@@ -510,6 +523,10 @@ def add_docx_hyperlink(paragraph: Any, text: str, href: str) -> Any:
     colour.set(qn("w:val"), "0563C1")
     underline = OxmlElement("w:u")
     underline.set(qn("w:val"), "single")
+    if bold:
+        properties.append(OxmlElement("w:b"))
+    if italic:
+        properties.append(OxmlElement("w:i"))
     properties.append(colour)
     properties.append(underline)
     run.append(properties)
@@ -525,3 +542,138 @@ def add_docx_hyperlink(paragraph: Any, text: str, href: str) -> Any:
 _HYPERLINK_RELATIONSHIP = (
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink"
 )
+
+
+# -- the same geometry, in Word ----------------------------------------------
+#
+# The DOCX used to inherit python-docx's blank template: 1in/1.25in margins,
+# Calibri 11pt, Heading 2 with its space before, List Bullet with its indents.
+# The same fitted content that is one PDF page became three pages in Word. Every
+# number below is one of the PDF numbers above, so a change to the layout is
+# made once. Word's Times New Roman has the metrics of the base-14 Times the PDF
+# is set in, so lines break in the same places.
+
+DOCX_FONT = "Times New Roman"
+#: Where a two-column row's right side is set: the PDF's right column is a
+#: table cell ending at the content edge.
+DOCX_RIGHT_TAB = CONTENT_WIDTH
+#: The PDF bullet style's indents: text at 13pt, bullet at 4pt.
+DOCX_BULLET_TEXT_INDENT = 13.0
+DOCX_BULLET_INDENT = 4.0
+
+
+def setup_docx(doc: Any) -> None:
+    """Page size, margins and the Normal style of a resume DOCX."""
+    from docx.enum.section import WD_ORIENT
+    from docx.oxml.ns import qn
+    from docx.shared import Pt
+
+    for section in doc.sections:
+        section.orientation = WD_ORIENT.PORTRAIT
+        section.page_width = Pt(PAGE_SIZE[0])
+        section.page_height = Pt(PAGE_SIZE[1])
+        section.left_margin = Pt(LEFT_MARGIN)
+        section.right_margin = Pt(RIGHT_MARGIN)
+        section.top_margin = Pt(TOP_MARGIN)
+        section.bottom_margin = Pt(BOTTOM_MARGIN)
+        # Empty header and footer, but Word still reserves their distance when
+        # it exceeds the margin.
+        section.header_distance = Pt(TOP_MARGIN / 2)
+        section.footer_distance = Pt(BOTTOM_MARGIN / 2)
+
+    normal = doc.styles["Normal"]
+    normal.font.name = DOCX_FONT
+    normal.font.size = Pt(BODY_SIZE)
+    # `font.name` sets only the ASCII slot; Word falls back to the theme font
+    # for the others, which changes line height when any such text appears.
+    fonts = normal.element.get_or_add_rPr().get_or_add_rFonts()
+    for slot in ("w:ascii", "w:hAnsi", "w:eastAsia", "w:cs"):
+        fonts.set(qn(slot), DOCX_FONT)
+    docx_spacing(normal, leading=BODY_LEADING)
+    normal.paragraph_format.widow_control = False
+
+
+def docx_spacing(target: Any, *, leading: float, before: float = 0, after: float = 0) -> None:
+    """Exact line height and paragraph spacing, as the PDF's leading/spaceAfter.
+
+    `target` is a paragraph or a style. "Exact" rather than "at least": Word
+    otherwise grows a line to the font's own line gap, which is what spread the
+    old DOCX.
+    """
+    from docx.enum.text import WD_LINE_SPACING
+    from docx.shared import Pt
+
+    fmt = target.paragraph_format
+    fmt.line_spacing_rule = WD_LINE_SPACING.EXACTLY
+    fmt.line_spacing = Pt(leading)
+    fmt.space_before = Pt(before)
+    fmt.space_after = Pt(after)
+
+
+def docx_section_heading(doc: Any, label: str) -> Any:
+    """The SectionRule in Word: small-caps label, rule to the right edge.
+
+    The rule is a tab leader to a right tab at the content edge, so it starts
+    where the label ends just as the PDF's does, and the label stays one run
+    of real text for a parser.
+    """
+    from docx.enum.text import WD_TAB_ALIGNMENT, WD_TAB_LEADER
+    from docx.shared import Pt
+
+    paragraph = doc.add_paragraph()
+    docx_spacing(paragraph, leading=SECTION_RULE_HEIGHT)
+    paragraph.paragraph_format.keep_with_next = True
+    paragraph.paragraph_format.tab_stops.add_tab_stop(
+        Pt(DOCX_RIGHT_TAB), WD_TAB_ALIGNMENT.RIGHT, WD_TAB_LEADER.LINES
+    )
+    run = paragraph.add_run(label)
+    run.font.size = Pt(HEADING_SIZE)
+    run.font.small_caps = True
+    paragraph.add_run("\t")
+    return paragraph
+
+
+def docx_row(doc: Any) -> Any:
+    """A paragraph with a right tab at the content edge, for left/right rows.
+
+    A tab rather than a table: Word keeps the text in reading order either way,
+    and a tab stop is what DOCX parsers handle best.
+    """
+    from docx.enum.text import WD_TAB_ALIGNMENT
+    from docx.shared import Pt
+
+    paragraph = doc.add_paragraph()
+    paragraph.paragraph_format.tab_stops.add_tab_stop(Pt(DOCX_RIGHT_TAB), WD_TAB_ALIGNMENT.RIGHT)
+    return paragraph
+
+
+def docx_bullet(doc: Any) -> Any:
+    """A justified bullet paragraph at the PDF bullet style's indents.
+
+    The bullet is a literal U+2022 and a tab, not a Word numbering definition,
+    so it extracts as the same character the PDF's does.
+    """
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from docx.shared import Pt
+
+    paragraph = doc.add_paragraph()
+    docx_spacing(paragraph, leading=BODY_LEADING, after=0.6)
+    fmt = paragraph.paragraph_format
+    fmt.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+    fmt.left_indent = Pt(DOCX_BULLET_TEXT_INDENT)
+    fmt.first_line_indent = Pt(DOCX_BULLET_INDENT - DOCX_BULLET_TEXT_INDENT)
+    fmt.tab_stops.add_tab_stop(Pt(DOCX_BULLET_TEXT_INDENT))
+    paragraph.add_run("•\t")
+    return paragraph
+
+
+def add_docx_emphasized(paragraph: Any, text: str) -> None:
+    """`text` as runs, bolding the figures :func:`emphasize` bolds in the PDF."""
+    cursor = 0
+    for start, end in emphasis_spans(text):
+        if start > cursor:
+            paragraph.add_run(text[cursor:start])
+        paragraph.add_run(text[start:end]).bold = True
+        cursor = end
+    if cursor < len(text):
+        paragraph.add_run(text[cursor:])

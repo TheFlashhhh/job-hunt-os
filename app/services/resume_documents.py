@@ -33,6 +33,7 @@ from typing import Any
 from xml.sax.saxutils import escape
 
 from docx import Document
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Pt
 from reportlab.lib.units import inch
 from reportlab.pdfbase.pdfmetrics import stringWidth
@@ -550,19 +551,13 @@ def _project_block(section: ResumeSection, styles: tmpl.Styles) -> list[Any]:
     # title. Measured against the real font metrics rather than a length guess.
     # A public repository link takes the context's place: on a printed page it
     # is the one thing a reader cannot recover from the name alone.
-    tail = _display_url(section.url) if section.url else section.context
+    tail = _project_tail(section)
     if tail:
-        plain = section.heading
-        if section.title:
-            plain += f" \u2014 {section.title}"
-        plain += f" | {tail}"
-        available = tmpl.CONTENT_WIDTH - 2.0 * inch - 6
-        if stringWidth(plain, tmpl.SERIF_BOLD, tmpl.BODY_SIZE) <= available:
-            if section.url:
-                href = escape(section.url, {chr(34): "&quot;"})
-                heading += f' | <link href="{href}">{escape(tail)}</link>'
-            else:
-                heading += f" | <i>{escape(tail)}</i>"
+        if section.url:
+            href = escape(section.url, {chr(34): "&quot;"})
+            heading += f' | <link href="{href}">{escape(tail)}</link>'
+        else:
+            heading += f" | <i>{escape(tail)}</i>"
 
     rows: list[Any] = [
         tmpl.two_column_row(
@@ -573,6 +568,22 @@ def _project_block(section: ResumeSection, styles: tmpl.Styles) -> list[Any]:
     ]
     rows += [tmpl.bullet_paragraph(text, styles) for text in section.bullets]
     return [KeepTogether(rows)] if rows else []
+
+
+def _project_tail(section: ResumeSection) -> str | None:
+    """The context or repository link after a project's name, if it fits.
+
+    Decided once for both formats, so the PDF and the DOCX carry the same line.
+    """
+    tail = _display_url(section.url) if section.url else section.context
+    if not tail:
+        return None
+    plain = section.heading
+    if section.title:
+        plain += f" — {section.title}"
+    plain += f" | {tail}"
+    available = tmpl.CONTENT_WIDTH - 2.0 * inch - 6
+    return tail if stringWidth(plain, tmpl.SERIF_BOLD, tmpl.BODY_SIZE) <= available else None
 
 
 def _display_url(url: str) -> str:
@@ -604,78 +615,139 @@ def _experience_block(section: ResumeSection, styles: tmpl.Styles) -> list[Any]:
 def render_docx(content: ResumeContent, path: Path) -> None:
     """The same document in the format some portals insist on.
 
-    It carries the same sections in the same order as the PDF. It used to omit
-    the professional summary and the coursework line, so the two formats said
-    different things about the same candidate — and a portal that takes only
-    DOCX got the weaker one.
+    It mirrors :func:`render_pdf` line for line: the same sections in the same
+    order, the same rows, and the page geometry, faces, sizes and spacing of
+    the Spark layout (``tmpl.setup_docx``). It used to inherit python-docx's
+    blank template, and the one-page fitted content ran to three pages in Word.
+    The PDF is the document that is fitted and page-counted; this one is fitted
+    by being the same layout.
     """
     doc = Document()
+    tmpl.setup_docx(doc)
 
-    title = doc.add_paragraph()
-    run = title.add_run(content.name)
+    # -- header ----------------------------------------------------------
+    name = doc.add_paragraph()
+    name.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    tmpl.docx_spacing(name, leading=tmpl.NAME_SIZE + 2, after=2)
+    run = name.add_run(content.name)
     run.bold = True
-    run.font.size = Pt(16)
-    contact = doc.add_paragraph()
-    contact.add_run(f"{content.location} | " if content.location else "")
-    for index, (text, href) in enumerate(content.contact_items or []):
-        if index:
-            contact.add_run(" | ")
-        if href:
-            tmpl.add_docx_hyperlink(contact, text, href)
-        else:
-            contact.add_run(text)
-    if not content.contact_items:
-        contact.add_run(content.contact_line)
+    run.font.small_caps = True
+    run.font.size = Pt(tmpl.NAME_SIZE)
+    if content.contact_line:
+        contact = doc.add_paragraph()
+        contact.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        tmpl.docx_spacing(contact, leading=tmpl.BODY_SIZE + 2, after=4)
+        items = [(text, href) for text, href in content.contact_items if text]
+        for index, (text, href) in enumerate(items):
+            if index:
+                # The PDF's separator: three non-breaking spaces and a plain one.
+                contact.add_run("    ")
+            if href:
+                tmpl.add_docx_hyperlink(contact, text, href)
+            else:
+                contact.add_run(text)
 
+    # -- professional summary -------------------------------------------
     if content.summary:
-        doc.add_heading("Professional Summary", level=2)
-        doc.add_paragraph(content.summary)
+        tmpl.docx_section_heading(doc, "Professional Summary")
+        summary = doc.add_paragraph(content.summary)
+        summary.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+        tmpl.docx_spacing(summary, leading=tmpl.BODY_LEADING, after=1)
 
+    # -- education -------------------------------------------------------
     if content.education:
-        doc.add_heading("Education", level=2)
+        tmpl.docx_section_heading(doc, "Education")
         for school in content.education:
-            heading = doc.add_paragraph()
-            heading.add_run(school.institution).bold = True
-            if school.dates:
-                heading.add_run(f" — {school.dates}")
-            detail = ", ".join(p for p in (school.degree_line, school.location) if p)
-            if detail:
-                doc.add_paragraph(detail)
+            _docx_row(doc, school.institution, school.dates, bold=True)
+            _docx_row(doc, school.degree_line, school.location, italic=True)
             if school.coursework:
-                course_line = doc.add_paragraph(f"Relevant Coursework: {school.coursework}")
-                course_line.runs[0].italic = True
+                line = tmpl.docx_bullet(doc)
+                line.add_run(f"Relevant Coursework: {school.coursework}").italic = True
     elif content.education_lines:
-        doc.add_heading("Education", level=2)
-        for line in content.education_lines:
-            doc.add_paragraph(line)
+        tmpl.docx_section_heading(doc, "Education")
+        for text in content.education_lines:
+            line = doc.add_paragraph(text)
+            line.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+            tmpl.docx_spacing(line, leading=tmpl.BODY_LEADING, after=1)
 
-    if content.skill_lines:
-        doc.add_heading("Skills", level=2)
-        for line in content.skill_lines:
-            doc.add_paragraph(line)
+    # -- skills ----------------------------------------------------------
+    groups = list(content.skill_groups)
+    if not groups:
+        for text in content.skill_lines:
+            label, _, rest = text.partition(":")
+            groups.append((label.strip(), rest.strip()))
+    if groups:
+        tmpl.docx_section_heading(doc, "Skills")
+        for label, skills in groups:
+            line = tmpl.docx_bullet(doc)
+            line.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT
+            line.add_run(f"{label}:").bold = True
+            line.add_run(f" {skills}")
 
-    experiences = [s for s in content.sections if s.kind == "EXPERIENCE"]
+    # -- projects, then experience ---------------------------------------
     projects = [s for s in content.sections if s.kind != "EXPERIENCE"]
+    experiences = [s for s in content.sections if s.kind == "EXPERIENCE"]
 
-    # Projects before experience, matching the PDF. The two formats are one
-    # document in two containers, not two opinions about how to present it.
-    for label, group in (("Projects", projects), ("Experience", experiences)):
-        if not group:
-            continue
-        doc.add_heading(label, level=2)
-        for section in group:
-            heading = doc.add_paragraph()
-            heading.add_run(section.heading).bold = True
+    if projects:
+        tmpl.docx_section_heading(doc, "Projects")
+        for section in projects:
+            # The PDF sets the whole title line in the italic sub_left style.
+            heading = tmpl.docx_row(doc)
             if section.url:
-                heading.add_run(" | ")
-                tmpl.add_docx_hyperlink(heading, _display_url(section.url), section.url)
-            if section.subheading:
-                sub = doc.add_paragraph(section.subheading)
-                sub.runs[0].italic = True
-            for bullet in section.bullets:
-                doc.add_paragraph(bullet, style="List Bullet")
+                tmpl.add_docx_hyperlink(
+                    heading, section.heading, section.url, bold=True, italic=True
+                )
+            else:
+                _docx_run(heading, section.heading, bold=True, italic=True)
+            if section.title:
+                _docx_run(heading, f" — {section.title}", bold=True, italic=True)
+            tail = _project_tail(section)
+            if tail:
+                _docx_run(heading, " | ", italic=True)
+                if section.url:
+                    tmpl.add_docx_hyperlink(heading, tail, section.url, italic=True)
+                else:
+                    _docx_run(heading, tail, italic=True)
+            heading.add_run(f"\t{section.dates or ''}")
+            _docx_bullets(doc, heading, section.bullets)
+
+    if experiences:
+        tmpl.docx_section_heading(doc, "Experience")
+        for section in experiences:
+            first = _docx_row(doc, section.heading, section.dates, bold=True)
+            if section.title or section.location:
+                _docx_row(doc, section.title, section.location, italic=True)
+            _docx_bullets(doc, first, section.bullets)
 
     doc.save(str(path))
+
+
+def _docx_row(
+    doc: Any, left: str | None, right: str | None, *, bold: bool = False, italic: bool = False
+) -> Any:
+    """``tmpl.two_column_row`` in Word. The left side alone is bold, as in the PDF."""
+    paragraph = tmpl.docx_row(doc)
+    _docx_run(paragraph, left or "", bold=bold, italic=italic)
+    _docx_run(paragraph, f"\t{right or ''}", italic=italic)
+    return paragraph
+
+
+def _docx_run(paragraph: Any, text: str, *, bold: bool = False, italic: bool = False) -> Any:
+    run = paragraph.add_run(text)
+    run.bold = bold or None
+    run.italic = italic or None
+    return run
+
+
+def _docx_bullets(doc: Any, block_start: Any, bullets: list[str]) -> None:
+    """An entry's bullets, kept on the page with their heading as KeepTogether does."""
+    for text in bullets:
+        tmpl.add_docx_emphasized(tmpl.docx_bullet(doc), text)
+    # Every paragraph from the heading to the last bullet keeps with the next.
+    paragraphs = doc.paragraphs
+    start = next(i for i, p in enumerate(paragraphs) if p._p is block_start._p)
+    for paragraph in paragraphs[start:-1]:
+        paragraph.paragraph_format.keep_with_next = True
 
 
 def render_pdf_bytes(content: ResumeContent) -> bytes:

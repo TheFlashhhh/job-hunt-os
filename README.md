@@ -75,8 +75,9 @@ A job search has three failure modes that generic tools don't address:
 - **One-page PDF plus editable DOCX:** the PDF is rendered and its pages counted, and
   the lowest-value content is removed until it fits. The type is never shrunk to
   make it fit. Tests read the PDF back with a second, ATS-style text extractor.
-  DOCX uses the same fitted content, but its layout is not page-fitted in Word;
-  check its pagination before submitting. Use the PDF for the verified one-page output.
+  The DOCX is set in the same page geometry, faces, sizes and line heights, and
+  measures one page in Microsoft Word on every resume checked; tests pin that
+  layout and check its words match the PDF word for word.
 
 ### Local workflow
 
