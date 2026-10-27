@@ -1,0 +1,132 @@
+# Search profiles. Keywords live here, never hard-coded in connectors.
+#
+# ONE ACTIVE LANE since 2026-09-08 (D-51): FULL_TIME_2027. The two
+# FALL_2026_INTERNSHIP_COOP profiles below are `enabled: false` rather than
+# deleted — they record what was searched for and with which keywords, and that
+# history is worth keeping. Nothing reads a disabled profile.
+
+schema_version: "1"
+
+search_profiles:
+  # ─────────────────────────── LANE A — FALL 2026 ───────────────────────────
+  - profile_id: fall_boston
+    lane: FALL_2026_INTERNSHIP_COOP
+    enabled: false
+    frequency_hours: 3
+    max_results: 250
+    locations: ["Boston, MA", "Cambridge, MA", "Greater Boston"]
+    remote: false
+    employment_type: [INTERNSHIP, CO_OP, PART_TIME]
+    title_keywords:
+      - Data Science Intern
+      - Data Scientist Intern
+      - Machine Learning Intern
+      - ML Engineer Intern
+      - AI Intern
+      - Applied AI Intern
+      - AI Engineer Intern
+      - Data Analyst Intern
+      - Product Analyst Intern
+      - Product Analytics Intern
+      - Data Engineer Intern
+      - Analytics Engineer Intern
+    term_keywords:
+      - Fall 2026 internship
+      - Fall internship
+      - Fall co-op
+      - semester internship
+      - semester co-op
+      - academic-year internship
+      - September-December internship
+      - part-time internship
+      - part-time co-op
+    exclusion_keywords: [Summer 2026, Summer 2027, senior, staff, principal, director]
+    source_scope: [greenhouse, lever, ashby, smartrecruiters, apify_linkedin]
+
+  - profile_id: fall_remote
+    lane: FALL_2026_INTERNSHIP_COOP
+    enabled: false
+    frequency_hours: 3
+    max_results: 250
+    locations: ["Remote (US)", "United States"]
+    remote: true
+    employment_type: [INTERNSHIP, CO_OP, PART_TIME]
+    title_keywords:
+      - Remote Data Science Intern
+      - Remote Machine Learning Intern
+      - Remote AI Intern
+      - Remote Data Analyst Intern
+      - Remote Data Engineer Intern
+    term_keywords: [remote internship, remote co-op, Fall 2026 internship, semester internship]
+    exclusion_keywords: [Summer 2026, senior, staff, principal]
+    source_scope: [greenhouse, lever, ashby, apify_linkedin]
+
+  # ────────────────────────── LANE B — FULL-TIME 2027 ────────────────────────
+  - profile_id: fulltime_ds
+    lane: FULL_TIME_2027
+    enabled: true
+    frequency_hours: 6
+    max_results: 250
+    locations: ["Boston, MA", "New York, NY", "San Francisco, CA", "Remote (US)"]
+    remote: true
+    employment_type: [FULL_TIME]
+    experience: [New Grad, University Graduate, Entry Level, Early Career, 0-3 YOE]
+    title_keywords: [Data Scientist, Data Science, Decision Scientist, Applied Scientist]
+    exclusion_keywords: [senior, staff, principal, director, manager, VP, PhD required]
+    source_scope: [greenhouse, lever, ashby, smartrecruiters, apify_linkedin]
+
+  - profile_id: fulltime_ml
+    lane: FULL_TIME_2027
+    enabled: true
+    frequency_hours: 6
+    max_results: 250
+    locations: ["Boston, MA", "New York, NY", "San Francisco, CA", "Remote (US)"]
+    remote: true
+    employment_type: [FULL_TIME]
+    experience: [New Grad, Entry Level, Early Career, 0-3 YOE]
+    title_keywords: [Machine Learning Engineer, ML Engineer, Applied ML Engineer]
+    exclusion_keywords: [senior, staff, principal, director, PhD required]
+    source_scope: [greenhouse, lever, ashby, apify_linkedin]
+
+  - profile_id: fulltime_ai
+    lane: FULL_TIME_2027
+    enabled: true
+    frequency_hours: 6
+    max_results: 250
+    locations: ["Boston, MA", "New York, NY", "San Francisco, CA", "Remote (US)"]
+    remote: true
+    employment_type: [FULL_TIME]
+    experience: [New Grad, Entry Level, Early Career, 0-3 YOE]
+    title_keywords: [AI Engineer, Applied AI Engineer, AI Software Engineer, Forward Deployed Engineer]
+    exclusion_keywords: [senior, staff, principal, director]
+    source_scope: [greenhouse, lever, ashby, apify_linkedin]
+    note: >-
+      GAP-LLM-APP applies to this profile: there is no completed LLM/RAG/agent
+      project evidence, so core-requirement fit will legitimately score low on
+      LLM-heavy postings. That is the correct signal, not a reason to inflate.
+
+  - profile_id: fulltime_analytics
+    lane: FULL_TIME_2027
+    enabled: true
+    frequency_hours: 6
+    max_results: 250
+    locations: ["Boston, MA", "New York, NY", "Remote (US)"]
+    remote: true
+    employment_type: [FULL_TIME]
+    experience: [New Grad, Entry Level, Early Career, 0-3 YOE]
+    title_keywords: [Data Analyst, Product Analyst, Product Analytics, Business Intelligence Analyst]
+    exclusion_keywords: [senior, staff, principal, director, manager]
+    source_scope: [greenhouse, lever, ashby, smartrecruiters, apify_linkedin]
+
+  - profile_id: fulltime_data_engineering
+    lane: FULL_TIME_2027
+    enabled: true
+    frequency_hours: 6
+    max_results: 250
+    locations: ["Boston, MA", "New York, NY", "San Francisco, CA", "Remote (US)"]
+    remote: true
+    employment_type: [FULL_TIME]
+    experience: [New Grad, Entry Level, Early Career, 0-3 YOE]
+    title_keywords: [Data Engineer, Analytics Engineer, Data Platform Engineer]
+    exclusion_keywords: [senior, staff, principal, director]
+    source_scope: [greenhouse, lever, ashby, smartrecruiters, apify_linkedin]

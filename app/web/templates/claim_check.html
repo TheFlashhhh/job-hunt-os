@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Claim Check · Job Hunt OS{% endblock %}
+{% block body %}
+<h1>Claim check</h1>
+<p class="sub">Ask the Evidence Bank: <em>is this sentence supported?</em> Anything UNSUPPORTED must not be written.</p>
+
+<form method="post" action="/claim-check" class="card">
+  <div class="field"><label>Proposed resume bullet, outreach line or application answer</label>
+    <textarea name="text" rows="4" placeholder="Built production RAG pipelines with LangChain…">{{ text }}</textarea></div>
+  <button type="submit">Check</button>
+</form>
+
+{% if check %}
+<div class="card" style="margin-top:14px">
+  <div class="between">
+    <h3 style="margin:0">Verdict</h3>
+    <span class="tag {{ 't-good' if check.verdict=='SUPPORTED' else ('t-warn' if check.verdict=='PARTIAL' else 't-bad') }}">{{ check.verdict }}</span>
+  </div>
+
+  {% if check.verdict == 'UNSUPPORTED' %}
+    <div class="notice bad" style="margin-top:12px">
+      <strong>Do not write this.</strong> It violates at least one Evidence Bank rule.
+    </div>
+  {% elif check.verdict == 'PARTIAL' %}
+    <div class="notice warn" style="margin-top:12px">
+      Not prohibited, but not fully traced to an Evidence ID. Tighten the wording or
+      pick a matched safe claim below before using it.
+    </div>
+  {% endif %}
+
+  {% if check.reasons %}
+    <h3 style="margin-top:14px">Reasons</h3>
+    <ul class="clean small">{% for r in check.reasons %}<li>{{ r }}</li>{% endfor %}</ul>
+  {% endif %}
+
+  {% if check.suggested_text %}
+    <h3 style="margin-top:14px">Safe alternative (project-level wording)</h3>
+    <div class="notice good small">{{ check.suggested_text }}</div>
+  {% endif %}
+
+  {% if check.matched_claim_ids %}
+    <h3 style="margin-top:14px">Matched safe claims</h3>
+    <div class="mono xs">{{ check.matched_claim_ids|join(', ') }}</div>
+  {% endif %}
+
+  {% if check.matched_evidence_ids %}
+    <h3 style="margin-top:14px">Supporting evidence</h3>
+    <div class="mono xs">{{ check.matched_evidence_ids|join(', ') }}</div>
+  {% endif %}
+
+  {% if check.violations %}
+    <h3 style="margin-top:14px">Violations</h3>
+    <div class="scroll"><table>
+      <thead><tr><th>Type</th><th>Detail</th></tr></thead>
+      <tbody>{% for v in check.violations %}
+        <tr><td class="xs mono">{{ v.type }}</td>
+            <td class="xs">{% for k, val in v.items() %}{% if k != 'type' %}<strong>{{ k }}</strong>: {{ val }}<br>{% endif %}{% endfor %}</td></tr>
+      {% endfor %}</tbody>
+    </table></div>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

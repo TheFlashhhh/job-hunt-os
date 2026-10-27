@@ -1,0 +1,91 @@
+# Career Evidence Bank - Scoring Weights (CONFIGURATION, not truth)
+# Per JOB_HUNT_OS_CONTEXT.md section 16: "Do not treat weights as permanent truth.
+# Store them in configuration."
+evidence_bank_version: "0.1"
+source_review_version: "v0.3"
+
+# ---------------------------------------------------------------------------
+# SKILL EVIDENCE-LEVEL WEIGHTS
+# Multiplier applied to a skill's contribution to requirement-match scoring.
+# GOVERNING MODEL: SKILL EXISTS != STRONG EVIDENCE != SAFE TO EMPHASIZE
+# ---------------------------------------------------------------------------
+skill_evidence_level_weights:
+  WORK_PROJECT_VERIFIED: 1.00
+  USER_CONFIRMED_PRACTICE: 0.60
+  COURSEWORK_VERIFIED: 0.50
+  SELF_REPORTED_LIMITED: 0.30
+  LEARNING_NOT_RESUME_READY: 0.15
+  PENDING_USER_CONFIRMATION: 0.00
+  UNSUPPORTED_DO_NOT_USE: 0.00
+
+skill_resume_eligibility:
+  WORK_PROJECT_VERIFIED: {resume_skills_line: true, tier: PRIMARY}
+  COURSEWORK_VERIFIED: {resume_skills_line: true, tier: COURSEWORK_LABELLED}
+  USER_CONFIRMED_PRACTICE: {resume_skills_line: true, tier: SEPARATED_PRACTICE_TIER}
+  SELF_REPORTED_LIMITED: {resume_skills_line: true, tier: SUPPORTING, priority: LOW}
+  LEARNING_NOT_RESUME_READY: {resume_skills_line: false, tier: null, note: "May appear only as explicitly labelled in-progress learning, at user discretion, never as a completed-project or work claim"}
+  PENDING_USER_CONFIRMATION: {resume_skills_line: false, tier: null}
+  UNSUPPORTED_DO_NOT_USE: {resume_skills_line: false, tier: null, hard_block: true}
+
+# ---------------------------------------------------------------------------
+# APPLICATION PRIORITY WEIGHTS  (JOB_HUNT_OS_CONTEXT.md section 16)
+# 100-point explainable model. Never emit a hiring-probability figure.
+# ---------------------------------------------------------------------------
+application_priority_weights:
+  FULL_TIME_2027:
+    eligibility_authorization_compatibility: 20
+    core_requirement_fit: 25
+    evidence_strength: 15
+    role_preference: 10
+    experience_level_fit: 10
+    recency: 5
+    location_remote_fit: 5
+    networking_opportunity: 5
+    future_sponsorship_willingness: 5
+    total: 100
+
+  FALL_2026_INTERNSHIP_COOP:
+    eligibility_authorization_compatibility: 20
+    core_requirement_fit: 25
+    evidence_strength: 15
+    role_preference: 10
+    experience_level_fit: 10
+    recency: 5
+    location_remote_fit: 5
+    networking_opportunity: 5
+    schedule_cpt_plausibility: 5
+    total: 100
+    note: >-
+      Fall lane replaces the sponsorship weight with schedule/CPT plausibility.
+      Remote receives increased relevance for this lane.
+
+# ---------------------------------------------------------------------------
+# EVIDENCE STRENGTH WEIGHTS
+# ---------------------------------------------------------------------------
+claim_strength_weights:
+  STRONG: 1.00
+  SOLID: 0.70
+  MODEST: 0.40
+
+confidence_weights:
+  HIGH: 1.00
+  MEDIUM: 0.70
+  LOW: 0.40
+
+role_family_relevance_weights:
+  HIGH: 1.00
+  MEDIUM: 0.60
+  LOW: 0.25
+  NONE: 0.00
+
+# ---------------------------------------------------------------------------
+# HARD RULES - not weights, not tunable
+# ---------------------------------------------------------------------------
+hard_rules:
+  - Never emit a hiring-probability or match-percentage figure.
+  - Never let sponsorship weighting dominate job fit.
+  - Never silently discard an UNCERTAIN opportunity.
+  - Evidence from PLANNED or IN_DEVELOPMENT projects is non-retrievable for resumes.
+  - Skills at PENDING_USER_CONFIRMATION contribute zero to scoring.
+  - Unresolved personal ownership gates first-person claim forms only, not project-level facts.
+  - A JD keyword is never evidence.

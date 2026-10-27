@@ -1,0 +1,93 @@
+# SYNTHETIC DEMO DATA - fictional projects. See candidate.yaml.
+#
+# HARD RULE: resume_auto_select and resume_ready are BOTH false for any project
+# whose project_status is PLANNED or IN_DEVELOPMENT.
+evidence_bank_version: "0.1"
+source_review_version: "demo"
+
+projects:
+  - project_id: PRJ-01
+    name: Transit Pulse
+    subtitle: Streaming Transit-Delay Pipeline
+    context: Graduate data engineering course (demo)
+    term: Spring 2026
+    project_type: ACADEMIC_TEAM
+    team_size: 3
+    technologies: [Python, Kafka, PySpark, PostgreSQL, Docker]
+    project_status: COMPLETE
+    resume_ready: true
+    resume_auto_select: true
+    first_person_claims_gated: false
+    evidence_ids: [EV-TP-01, EV-TP-02, EV-TP-03]
+    limitations:
+      - Synthetic feed replayed locally; not a production deployment
+    provenance: [REPO_OR_PROJECT_ARTIFACT]
+    confidence: HIGH
+
+  - project_id: PRJ-02
+    name: Neighborhood Housing Analysis
+    subtitle: Nonprofit client analytics engagement
+    context: University practicum (demo)
+    term: Fall 2025
+    project_type: ACADEMIC_TEAM
+    team_size: 4
+    technologies: [Python, pandas, SQL, GeoPandas, Tableau]
+    project_status: DELIVERED
+    resume_ready: true
+    resume_auto_select: true
+    first_person_claims_gated: true
+    evidence_ids: [EV-NH-01, EV-NH-02, EV-NH-03]
+    limitations:
+      - Findings are descriptive; no causal effect was estimated
+    provenance: [REPO_OR_PROJECT_ARTIFACT]
+    confidence: HIGH
+
+  - project_id: PRJ-03
+    name: Race Pace Simulator
+    subtitle: Strategy simulation and backtesting tool
+    context: Personal project (demo)
+    term: Summer 2025
+    project_type: PERSONAL_INDEPENDENT
+    team_size: 1
+    technologies: [Python, pandas, Streamlit]
+    project_status: COMPLETE
+    resume_ready: true
+    resume_auto_select: true
+    #: A standing user preference, not an evidence judgement: ranks lower on a
+    #: general resume, and still leads when a posting asks for simulation.
+    resume_selection_priority: LOWER
+    first_person_claims_gated: false
+    evidence_ids: [EV-RP-01, EV-RP-02]
+    provenance: [REPO_OR_PROJECT_ARTIFACT]
+    confidence: HIGH
+
+  - project_id: PRJ-11
+    name: Shot Quality Model
+    subtitle: Leakage-safe sports event modelling
+    context: Sports analytics hackathon (demo)
+    term: April 2026
+    project_type: HACKATHON
+    team_size: 3
+    technologies: [Python, pandas, scikit-learn, XGBoost, SHAP]
+    project_status: EVALUATED
+    resume_ready: true
+    resume_auto_select: true
+    first_person_claims_gated: false
+    evaluation_status: FORMALLY_EVALUATED_CROSS_VALIDATED
+    evidence_ids: [EV-SQ-01, EV-SQ-02, EV-SQ-03]
+    limitations:
+      - Cross-validated only; no held-out test season
+    provenance: [REPO_OR_PROJECT_ARTIFACT]
+    confidence: HIGH
+
+  - project_id: PRJ-06
+    name: Portfolio Chatbot
+    project_type: PERSONAL_INDEPENDENT
+    project_status: PLANNED
+    resume_ready: false
+    resume_auto_select: false
+    evidence_ids: []
+    is_career_evidence: false
+    provenance: [DIRECT_USER_CLARIFICATION]
+    confidence: HIGH
+    note: PLANNED work is never resume evidence. Shown so the demo exercises the gate.

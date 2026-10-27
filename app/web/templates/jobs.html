@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Jobs · Job Hunt OS{% endblock %}
+{% block body %}
+<h1>Jobs</h1>
+<p class="sub">{{ rows|length }} job{{ '' if rows|length == 1 else 's' }} · sorted by application priority.</p>
+
+<form method="get" action="/jobs" class="card" style="margin-bottom:14px">
+  <div class="row">
+    <div><label>Lane</label>
+      <select name="lane">
+        {% for v in ['ALL','FALL_2026_INTERNSHIP_COOP','FULL_TIME_2027','BOTH_OR_AMBIGUOUS','NEITHER'] %}
+          <option value="{{ v }}" {% if lane==v %}selected{% endif %}>{{ v.replace('_',' ').title() }}</option>
+        {% endfor %}
+      </select></div>
+    <div><label>Application status</label>
+      <select name="status">
+        <option value="ALL">All</option>
+        {% for s in statuses %}<option value="{{ s }}" {% if status==s %}selected{% endif %}>{{ s.replace('_',' ').title() }}</option>{% endfor %}
+      </select></div>
+    <div><label>Eligibility</label>
+      <select name="eligibility">
+        {% for v in ['ALL','ELIGIBLE','LIKELY_ELIGIBLE','UNCERTAIN','INELIGIBLE'] %}
+          <option value="{{ v }}" {% if eligibility==v %}selected{% endif %}>{{ v.replace('_',' ').title() }}</option>
+        {% endfor %}
+      </select></div>
+    <div><label>Priority band</label>
+      <select name="band">
+        {% for v in ['ALL','HIGH','MEDIUM','LOW'] %}
+          <option value="{{ v }}" {% if band==v %}selected{% endif %}>{{ v.title() }}</option>
+        {% endfor %}
+      </select></div>
+    <div><label>Search</label><input name="q" value="{{ q }}" placeholder="title or company"></div>
+    <div><label>&nbsp;</label><button type="submit">Filter</button></div>
+  </div>
+</form>
+
+<div class="card scroll">
+{% if rows %}
+<table>
+  <thead><tr>
+    <th>Pri</th><th>Company</th><th>Title</th><th>Lane</th><th>Role</th><th>Location</th>
+    <th>Posted</th><th>First seen</th><th>Deadline</th><th>Eligibility</th><th>Auth</th>
+    <th>Sponsorship</th><th>Status</th><th>Source</th>
+  </tr></thead>
+  <tbody>
+  {% for r in rows %}
+    <tr>
+      <td><span class="tag {{ 't-good' if r.band=='HIGH' else ('t-warn' if r.band=='MEDIUM' else 't-dim') }}">{{ r.priority|round(0)|int }}</span></td>
+      <td>{{ r.company }}</td>
+      <td><a href="/jobs/{{ r.job_id }}">{{ r.title }}</a>
+        {% if r.legitimacy != 'LEGITIMACY_NORMAL' %}<span class="tag t-warn xs">{{ r.legitimacy.replace('LEGITIMACY_','').replace('_',' ').title() }}</span>{% endif %}</td>
+      <td class="xs">{{ 'Fall 26' if r.lane.startswith('FALL') else ('FT 27' if r.lane.startswith('FULL') else r.lane.replace('_',' ').title()) }}</td>
+      <td class="xs">{{ r.role_family.replace('_',' ').title() }}</td>
+      <td class="xs">{{ r.location or '—' }}{% if r.remote != 'UNKNOWN' %} <span class="dim">({{ r.remote.title() }})</span>{% endif %}</td>
+      <td class="xs">{{ r.posted_date or '—' }}</td>
+      <td class="xs">{{ r.first_seen[:10] if r.first_seen else '—' }}</td>
+      <td class="xs">{{ r.deadline or '—' }}</td>
+      <td><span class="tag {{ 't-good' if r.eligibility in ['ELIGIBLE','LIKELY_ELIGIBLE'] else ('t-warn' if r.eligibility=='UNCERTAIN' else 't-bad') }} xs">{{ r.eligibility.replace('_',' ').title() }}</span></td>
+      <td class="xs dim">{{ r.authorization.replace('_',' ').title() }}</td>
+      <td class="xs">{{ r.sponsorship.replace('_',' ').title() }}</td>
+      <td class="xs">{{ r.application_status.replace('_',' ').title() }}</td>
+      <td class="xs mono">{{ r.discovery_source }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+  <div class="empty">No jobs match these filters. <a href="/import">Import a job</a> to get started.</div>
+{% endif %}
+</div>
+{% endblock %}

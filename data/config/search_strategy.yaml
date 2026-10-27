@@ -1,0 +1,323 @@
+# SEARCH STRATEGY — which lane is active, and what a target role actually is.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# 2026-08-24: THE FALL 2026 INTERNSHIP / CO-OP LANE IS RETIRED.
+#
+# The candidate is no longer pursuing the Fall 2026 CPT internship pathway. There is one
+# active external search lane: full-time employment starting after his December
+# 2026 academic completion.
+#
+# Retired means ARCHIVED, not deleted. Every Fall job, application, rejection
+# and CRM record stays exactly as it is and stays reachable — the system spent
+# months building that history and it is the record of what was actually tried.
+# What changes is that the Fall lane no longer produces active targets, active
+# KPIs, or active next actions.
+#
+# This file records the SEARCH decision only. It is not a statement about
+# immigration rules, and nothing here should be read as one.
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# TITLE IS A SIGNAL. FUNCTION DECIDES RELEVANCE.
+#
+# `example_titles` below is exactly what its name says: examples, used as
+# discovery hints and nothing else. It is NOT an allowlist, and no code may
+# treat it as one — `title_list_is_exhaustive: false` is machine-readable so
+# that stays true after this comment is forgotten. The old classifier matched
+# titles against a fixed pattern list and put 95% of a 10,000-job corpus into
+# `role_family: UNRELATED`, including postings whose descriptions were entirely
+# SQL, Python and experimentation. That is the failure this file exists to fix.
+
+schema_version: "1"
+strategy_version: "2.0"
+effective_date: '2026-08-24'
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Lanes
+# ─────────────────────────────────────────────────────────────────────────────
+
+lanes:
+  FULL_TIME_2027:
+    status: ACTIVE
+    label: "Full-Time · Post-Graduation"
+    window: "Dec 2026 / Jan 2027 onward"
+    description: >-
+      Full-time US roles suitable for someone finishing a Data Science MS at the
+      end of 2026. The only active lane.
+
+  FALL_2026_INTERNSHIP_COOP:
+    status: ARCHIVED
+    archived_on: '2026-08-24'
+    label: "Fall 2026 Internship / Co-op (archived)"
+    description: >-
+      Retired 2026-08-24. Records are preserved and remain viewable under the
+      historical filter; the lane produces no new targets, no KPIs and no next
+      actions.
+
+#: Everything not listed as ACTIVE above. Read by code rather than hard-coded,
+#: so retiring or reopening a lane is a config change.
+active_lanes: [FULL_TIME_2027]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Availability
+# ─────────────────────────────────────────────────────────────────────────────
+
+availability:
+  #: Classes conclude around here.
+  academic_completion: '2026-12'
+  #: Degree conferral / final processing.
+  degree_conferral: '2027-01'
+  #: The earliest start the candidate can accept for full-time work.
+  earliest_start: '2026-12'
+  preferred_start: '2027-01'
+  #: A posting that requires starting before this is a timing mismatch — FLAGGED
+  #: and explained, never silently dropped. Most postings give no start date at
+  #: all, and an absent date is not a mismatch.
+  flag_start_before: '2026-12'
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Experience bands
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# A band is a description of the posting, not a verdict on the candidate.
+# REACH is visible on purpose: "2+ years" is a normal new-grad posting in
+# practice, and hard-rejecting every one of them would delete most of the market.
+
+experience:
+  bands:
+    ENTRY_COMPATIBLE:
+      description: "New grad, university grad, entry level, or 0-1 years."
+      max_years_required: 1
+      active: true
+    EARLY_CAREER:
+      description: "Roughly 1-3 years; reachable with internship and project work."
+      max_years_required: 3
+      active: true
+    REACH:
+      description: >-
+        Asks for more than the early-career band but is not senior. Shown when
+        the rest of the fit is strong, and labelled honestly.
+      max_years_required: 5
+      active: true
+    OVERLEVELLED:
+      description: "Senior, staff, principal, or 6+ years required. Not an active target."
+      active: false
+
+  #: Above this, a posting stops being a reach and becomes someone else's job.
+  hard_ceiling_years: 6
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Location
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Priority ORDERS results. It does not restrict them: a strong early-career data
+# role in Austin or Chicago must stay visible, and only the country is a filter.
+
+location:
+  country: US
+  priority:
+    - {name: "Greater Boston", tier: 1, terms: [Boston, Cambridge, Somerville, Waltham, Burlington MA, Massachusetts]}
+    - {name: "New York City", tier: 2, terms: [New York, NYC, Brooklyn, Manhattan]}
+    - {name: "Bay Area", tier: 3, terms: [San Francisco, Bay Area, Palo Alto, Mountain View, Sunnyvale, Menlo Park, Oakland]}
+    - {name: "Remote (US)", tier: 4, terms: [Remote US, Remote - US, US Remote, Remote (US)]}
+  #: Any other US location. Ranked below the tiers above, never excluded.
+  other_us_tier: 5
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Target functions — what the person actually DOES
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# These reuse the resume archetype vocabulary (`role_targeting.yaml`) rather
+# than inventing a third classification system, plus two additions the archetype
+# set had no home for: DATA_ANALYTICS (business/insights analytics) and
+# DECISION_ANALYTICS (decision science, risk/pricing/marketplace quantitative
+# decision support).
+#
+# The many analytics flavours in a job market — growth, marketplace, risk,
+# pricing, measurement, insights, operations, strategy, BI — are NOT separate
+# functions here. They are the same handful of functions applied to a DOMAIN,
+# and they are represented on the `domain` axis below. Fragmenting them into
+# twenty role families would mean twenty pattern lists to maintain and twenty
+# ways for them to disagree.
+
+# `priority` is the second axis, added 2026-09-07 (D-49). A function is either
+# a PRIMARY_TARGET — the strongest data/AI directions — or a SECONDARY_TARGET,
+# which is a real target that usually ranks behind a primary one at similar fit.
+#
+# It is NOT a third lane. Both priorities live in FULL_TIME_2027 and both appear
+# in the default feed; the priority orders them.
+
+target_functions:
+  - name: DATA_SCIENCE
+    active: true
+    priority: PRIMARY_TARGET
+    label: Data Science
+  - name: MACHINE_LEARNING_ENGINEERING
+    active: true
+    priority: PRIMARY_TARGET
+    label: Machine Learning Engineering
+  - name: APPLIED_AI_SOFTWARE
+    active: true
+    priority: PRIMARY_TARGET
+    label: Applied AI / AI Engineering
+  - name: DATA_ANALYTICS
+    active: true
+    priority: PRIMARY_TARGET
+    label: Data & Business Analytics
+  - name: PRODUCT_ANALYTICS
+    active: true
+    priority: PRIMARY_TARGET
+    label: Product Analytics
+  - name: DECISION_ANALYTICS
+    active: true
+    priority: PRIMARY_TARGET
+    label: Decision Science & Analytics
+  - name: ANALYTICS_ENGINEERING
+    active: true
+    priority: PRIMARY_TARGET
+    label: Analytics Engineering / BI
+  - name: DATA_ENGINEERING
+    active: true
+    priority: PRIMARY_TARGET
+    label: Data Engineering
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Corrected 2026-09-07 (D-49). This was `active: false`.
+  #
+  # The function-first pass was right to stop calling backend postings
+  # "analytics". It then drew the wrong conclusion from that and treated
+  # software engineering as irrelevant, which it is not: the candidate's OpenText
+  # internship IS a software engineering job — C#/.NET, Entity Framework, REST
+  # APIs, SQL Server/Oracle/PostgreSQL/MySQL, Postman, Swagger, MSTest, Azure
+  # DevOps — and his project work carries Python, Kafka, Spark, Docker and
+  # Kubernetes.
+  #
+  # SOFTWARE_BUILD means "classify this as software", not "discard this".
+  # ───────────────────────────────────────────────────────────────────────────
+  - name: SOFTWARE_ENGINEERING
+    active: true
+    priority: SECONDARY_TARGET
+    label: Software Engineering
+    note: >-
+      A real target, usually ranked behind a primary data/AI role at similar
+      fit. Backend, API, service, database-heavy and data/ML-platform work fits
+      the evidence; frontend-only, mobile, embedded, graphics and kernel work
+      does not — see `swe_specializations`.
+
+# Which software specialisations the evidence actually supports. This decides
+# whether a SOFTWARE_ENGINEERING posting is a secondary target or deprioritised.
+# It is about SPECIALISATION, not seniority — the experience band still binds
+# independently.
+swe_specializations:
+  aligned:
+    - backend
+    - APIs and services
+    - Python
+    - C# / .NET
+    - SQL and relational databases
+    - data platform / data infrastructure
+    - ML platform / AI software
+    - distributed data systems
+    - testing and API/database validation
+  mismatched:
+    - frontend-only / React UI
+    - iOS / Android / mobile
+    - embedded / firmware
+    - graphics / game engine
+    - kernel / low-level systems
+    - networking infrastructure
+    - specialised security engineering
+  #: A mismatched specialisation is DEPRIORITIZED, not deleted: the record stays
+  #: and stays explicable. Only an unusually strong evidence overlap in the JD
+  #: pulls one back.
+  mismatch_treatment: DEPRIORITIZED
+
+#: The domain axis. A domain never makes a job relevant on its own — "Risk" is
+#: not a target, "risk analytics" is — and never makes one irrelevant either.
+#: Finance, healthcare and operations all contain excellent analytics roles.
+domains:
+  - RISK
+  - PRICING
+  - GROWTH
+  - MARKETPLACE
+  - OPERATIONS
+  - STRATEGY
+  - MEASUREMENT
+  - INSIGHTS
+  - MARKETING
+  - SUPPLY_CHAIN
+  - HEALTHCARE
+  - FINANCE
+  - TRUST_AND_SAFETY
+  - PEOPLE
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Example titles — DISCOVERY HINTS ONLY
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: Machine-readable, and load-bearing: any code that reads `example_titles` must
+#: check this first. A title on this list is a hint to look closer. A title
+#: absent from it means nothing at all.
+title_list_is_exhaustive: false
+
+example_titles:
+  obvious:
+    - Data Scientist
+    - Data Analyst
+    - Business Analyst
+    - Machine Learning Engineer
+    - Analytics Engineer
+    - Data Engineer
+    - Product Analyst
+    - Business Intelligence Engineer
+    - Applied Scientist
+    - AI Engineer
+  #: The point of this whole change. Every one of these is a real posting shape
+  #: whose title carries no target keyword and whose work is squarely on target.
+  non_obvious:
+    - Decision Scientist
+    - Decision Science Associate
+    - Insights Analyst
+    - Insights Associate
+    - Growth Analyst
+    - Marketplace Analyst
+    - Risk Analyst
+    - Risk Strategy Analyst
+    - Pricing Analyst
+    - Measurement Analyst
+    - Research Analyst
+    - Strategy & Analytics
+    - Strategy Associate
+    - Strategy & Operations Analyst
+    - Data & Insights Associate
+    - Operations Analyst
+    - Revenue Analytics
+    - Product Operations Analyst
+    - Quantitative Analyst
+    - Technical Analyst
+    - Healthcare Analytics Analyst
+    - Business Operations Analyst
+    - Commercial Analytics Analyst
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Employment types
+# ─────────────────────────────────────────────────────────────────────────────
+
+employment:
+  active_types: [FULL_TIME]
+  #: Excluded from the ACTIVE search. Existing records keep their type and stay
+  #: viewable; this only stops new ones becoming active targets.
+  excluded_types: [INTERNSHIP, CO_OP]
+  #: An unstated employment type is not an internship. Most ATS feeds say
+  #: nothing, and treating silence as an exclusion would empty the search.
+  unknown_is_excluded: false
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Sponsorship
+# ─────────────────────────────────────────────────────────────────────────────
+
+sponsorship:
+  #: A small positive signal where the posting supports one. Never a hard
+  #: filter, never inferred without evidence, and never written into a resume
+  #: or cover letter.
+  treatment: SMALL_POSITIVE_SIGNAL
+  hard_filter: false

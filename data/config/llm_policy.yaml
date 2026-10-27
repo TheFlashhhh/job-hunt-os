@@ -1,0 +1,54 @@
+# LLM task routing. CONFIGURATION, not business logic.
+# Services never name a model — they ask LLMTaskPolicy for a tier.
+#
+# Architecture v1.0 §8: prefer deterministic code wherever practical.
+# The premium tier is manual/on-demand only and never runs in daily ingestion.
+
+llm_task_policy:
+  tiers:
+    cheap:
+      model: claude-haiku-4-5
+      batch_eligible: true
+      manual_only: false
+      notes: Lightweight semantic classification, basic extraction, ambiguity resolution.
+
+    strong:
+      model: claude-sonnet-5
+      batch_eligible: true
+      manual_only: false
+      notes: Evidence mapping, complex JD interpretation, fit explanation.
+
+    premium:
+      model: claude-opus-5
+      batch_eligible: false
+      manual_only: true
+      notes: >-
+        Manual/on-demand only. Never invoked by automated ingestion.
+        Resume tailoring, outreach drafting, complex review.
+
+  # Task → tier. DETERMINISTIC means no model call at all.
+  tasks:
+    JOB_CLASSIFICATION: CHEAP
+    JD_EXTRACTION: CHEAP
+    ELIGIBILITY_INTERPRETATION: STRONG
+    EVIDENCE_MAPPING: STRONG
+    FIT_EXPLANATION: STRONG
+    RESUME_TAILORING: PREMIUM
+    OUTREACH_DRAFTING: PREMIUM
+    COMPLEX_REVIEW: PREMIUM
+
+  # Which work runs synchronously vs. batched (architecture v1.0 §9).
+  # Urgency decides — not "all scheduled work goes to batch".
+  analysis_mode_routing:
+    synchronous:
+      - new plausible FALL_2026_INTERNSHIP_COOP jobs
+      - deadline-sensitive jobs
+      - very high-priority FULL_TIME_2027 jobs
+      - user-requested analysis
+      - interactive job-detail analysis
+      - resume tailoring
+      - outreach generation
+    batch:
+      - lower-urgency scheduled FULL_TIME_2027 jobs
+      - ordinary recurring backlog
+      - bulk re-analysis where latency is acceptable

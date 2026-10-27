@@ -1,0 +1,81 @@
+"""SQLAlchemy models. Importing this package registers every table on ``Base``."""
+
+from __future__ import annotations
+
+from app.models.analysis import (
+    EligibilityAssessment,
+    EvidenceMatch,
+    JobAnalysis,
+    JobRequirement,
+    LegitimacyAssessment,
+    PriorityScore,
+    SponsorshipSignal,
+)
+from app.models.base import Base, new_id, utcnow
+from app.models.crm import Application, ApplicationNote, ApplicationStatusHistory
+from app.models.ingestion import (
+    CollectionRun,
+    Company,
+    DedupeDecision,
+    Job,
+    JobSourceAssociation,
+    JobVersion,
+    RawJobSourceRecord,
+)
+from app.models.misc import (
+    AIUsage,
+    ApifyRun,
+    CareerOpportunity,
+    Contact,
+    CoverLetterVersion,
+    FollowUp,
+    Interview,
+    InterviewPrepItem,
+    JobContact,
+    OutreachInteraction,
+    Referral,
+    ResumeFamily,
+    ResumeRecommendation,
+    ResumeVersion,
+    SystemSetting,
+    SystemTask,
+)
+
+__all__ = [
+    "AIUsage",
+    "ApifyRun",
+    "Application",
+    "ApplicationNote",
+    "ApplicationStatusHistory",
+    "Base",
+    "CareerOpportunity",
+    "CoverLetterVersion",
+    "CollectionRun",
+    "Company",
+    "Contact",
+    "DedupeDecision",
+    "EligibilityAssessment",
+    "EvidenceMatch",
+    "FollowUp",
+    "Interview",
+    "InterviewPrepItem",
+    "Job",
+    "JobAnalysis",
+    "JobContact",
+    "JobRequirement",
+    "JobSourceAssociation",
+    "JobVersion",
+    "LegitimacyAssessment",
+    "OutreachInteraction",
+    "PriorityScore",
+    "RawJobSourceRecord",
+    "Referral",
+    "ResumeFamily",
+    "ResumeRecommendation",
+    "ResumeVersion",
+    "SponsorshipSignal",
+    "SystemSetting",
+    "SystemTask",
+    "new_id",
+    "utcnow",
+]

@@ -1,0 +1,86 @@
+# SYNTHETIC DEMO CANDIDATE - NOT A REAL PERSON.
+#
+# Jordan Lee is fictional. Every school, employer, project, figure and contact
+# detail in this Evidence Bank is invented so the public repository can run end
+# to end without anyone's real career data. The schema is the real one; the
+# content is not. Replace these files with your own to use the system for real.
+evidence_bank_version: "0.1"
+generated_at: "2026-10-26"
+source_review_version: "demo"
+is_synthetic_demo: true
+
+candidate:
+  candidate_id: CAND-DEMO
+  name: Jordan Lee
+  location: Boston, MA
+  phone: "(555) 010-0142"
+  email_personal: jordan.lee@example.com
+  preferred_application_email: jordan.lee@example.com
+  linkedin: null
+  github: null
+  provenance: [DIRECT_USER_CLARIFICATION]
+  confidence: HIGH
+
+education:
+  - education_id: EDU-01
+    institution: Northbridge University (Fictional)
+    location: Boston, MA
+    degree: Master of Science in Data Science
+    start_date: "2025-09"
+    end_date_expected: "2027-01"
+    academic_completion: "Fall 2026"
+    evidence_ids: [EV-ED-01, EV-ED-02]
+    provenance: [DIRECT_USER_CLARIFICATION]
+    confidence: HIGH
+
+  - education_id: EDU-02
+    institution: Lakeshore Institute of Technology (Fictional)
+    location: Chicago, IL
+    degree: Bachelor of Science in Computer Science
+    start_date: "2019-08"
+    end_date: "2023-05"
+    evidence_ids: [EV-ED-03]
+    provenance: [DIRECT_USER_CLARIFICATION]
+    confidence: HIGH
+
+work_authorization:
+  # The system never sets this to true. Only a person, after real
+  # authorization, may.
+  authorized_confirmed: false
+  system_may_infer_eligibility: false
+  system_may_set_authorized_confirmed: false
+  post_completion_2027:
+    state: AUTHORIZATION_REQUIRES_VERIFICATION
+    planning_note: Demo value. Not a statement about any real person.
+  sponsorship:
+    is_hard_requirement: false
+    treatment: PREFERENCE
+    default_ranking_bonus_points: 5
+    max_points_scale: 100
+
+search_lanes:
+  - lane_id: FULL_TIME_2027
+    target_start: "2027-01 or shortly after"
+    experience_bands: ["New Graduate", "University Graduate", "Entry Level", "Early Career", "0-1 YOE", "0-2 YOE", "0-3 YOE"]
+
+location_preferences:
+  country: United States
+  preferred: [Boston, New York City, San Francisco Bay Area]
+  also_open_to: [Remote US]
+
+timeline:
+  - period: "2019-08 to 2023-05"
+    activity: BS Computer Science (demo)
+    ref: EDU-02
+  - period: "2022-06 to 2022-08"
+    activity: Quillmark Labs - Data Analyst Intern (demo)
+    ref: EXP-02
+  - period: "2023-06 to 2024-06"
+    activity: Fernbrook Systems - Software Engineering Intern (demo)
+    ref: EXP-01
+  - period: "2025-09 to present"
+    activity: MS Data Science (demo)
+    ref: EDU-01
+  - period: "2026-09 to present"
+    activity: Teaching Assistant (demo)
+    ref: EXP-03

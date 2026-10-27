@@ -1,0 +1,910 @@
+# ROLE TARGETING PROFILES
+#
+# A resume base answers "which family of roles is this for?". That is too coarse
+# to position against a specific posting: a real "Analytics Engineer, Data
+# Science" posting classifies as DATA_SCIENTIST on its title, and the DS_ML_AI base then
+# led the page with CNNs, computer vision and LSTMs for a job whose actual
+# subject is SQL transformation, ETL/ELT and data quality.
+#
+# So an ARCHETYPE is derived from the posting itself and decides POSITIONING:
+# which safe claims lead, how skills are grouped, what the summary says, and
+# what gets pushed down the page.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# TARGETING IS NOT PERMISSION.
+#
+# Nothing in this file can put a skill or a claim onto a resume. Every skill
+# named here is still looked up in skills.yaml and dropped unless the Evidence
+# Bank marks it resume-usable; every bullet is still the verbatim text of a safe
+# claim. A JD asking for Tableau, Looker, Sigma, AWS, Airflow or RAG changes the
+# ORDER of what the candidate actually has — never the CONTENTS.
+#
+# This file therefore holds three kinds of thing, and only three:
+#   * signals  — how to recognise an archetype in a posting (matching only)
+#   * ordering — which categories and claim families lead (ranking only)
+#   * frames   — authored sentence templates whose facts come from the Bank
+# ─────────────────────────────────────────────────────────────────────────────
+
+schema_version: "1"
+
+#: How hard targeting reorders. Weights are applied to the bullet utility score.
+#: No level unlocks unsupported content — CONSERVATIVE and AGGRESSIVE_SAFE draw
+#: from exactly the same set of safe claims, and differ only in how sharply
+#: JD alignment outranks generic claim strength.
+# `bullet_quality` is the X-Y-Z preference (app/services/bullet_quality.py): does
+# the line say what was achieved, or only what was touched? It is weighted well
+# below requirement_match on purpose. Relevance and truthfulness decide what goes
+# on the page; writing quality breaks ties between comparable bullets. A well
+# written bullet about the wrong thing must never beat a plainer one about the
+# right thing, and no weight here can create, reword or quantify a claim.
+targeting_intensity:
+  default: BALANCED
+  levels:
+    CONSERVATIVE:
+      requirement_match: 1.0
+      keyword_alignment: 0.5
+      role_family_relevance: 1.0
+      evidence_strength: 2.0
+      metric_strength: 1.0
+      ownership_confidence: 1.0
+      recency: 0.5
+      uniqueness: 0.5
+      business_impact: 0.4
+      technical_depth: 0.4
+      bullet_quality: 0.8
+      space_cost: 0.3
+    BALANCED:
+      requirement_match: 2.4
+      keyword_alignment: 1.6
+      role_family_relevance: 1.8
+      evidence_strength: 1.2
+      metric_strength: 0.9
+      ownership_confidence: 0.8
+      recency: 0.6
+      uniqueness: 0.8
+      business_impact: 0.7
+      technical_depth: 0.7
+      bullet_quality: 0.9
+      space_cost: 0.3
+    AGGRESSIVE_SAFE:
+      requirement_match: 3.4
+      keyword_alignment: 2.6
+      role_family_relevance: 2.4
+      evidence_strength: 0.8
+      metric_strength: 0.7
+      ownership_confidence: 0.6
+      recency: 0.5
+      uniqueness: 1.0
+      business_impact: 0.9
+      technical_depth: 0.9
+      bullet_quality: 0.7
+      space_cost: 0.3
+
+# ─────────────────────────────────────────────────────────────────────────────
+# USER PROJECT PREFERENCES
+#
+# A project in the Evidence Bank may carry `resume_selection_priority`. The
+# label is the user's own preference about how often they want to SEE a project
+# on a tailored resume; the multiplier below is what that preference costs.
+#
+# It multiplies the utility of every bullet the project owns, which flows
+# through to the project's own entry value and so to which projects survive the
+# entry cap. Two properties make it a preference rather than a veto:
+#
+#   * it is MODEST — a 0.85 default is a nudge, not an exclusion;
+#   * it FADES as the posting engages the line. The multiplier applies in full
+#     only where the JD shows no particular pull toward this material, and
+#     reaches 1.0 where the posting names it:
+#         effective = 1 - (1 - modifier) x (1 - engagement)
+#     with engagement = max(requirement_match, keyword_alignment).
+#
+# The fade is load-bearing, not decoration. Measured against a real
+# simulation/backtesting posting, a FLAT 0.85 dropped the de-prioritised
+# project from the page even though it was the best match on the board — the
+# JD-relevance dimensions move in tenths of a point, so a flat 15% penalty is
+# larger than the gap relevance can open. Faded, the same posting selects it
+# first. "Less often, not never" is only true if strong relevance can actually
+# cancel the preference out.
+#
+# What it is NOT: a way to remove a project. A LOWER project keeps every claim,
+# metric and evidence item it had, stays resume_ready, stays in the candidate
+# pools, and still leads the page when the posting calls for it. Anything that
+# should never be selected belongs behind `resume_auto_select: false` in the
+# Bank, not behind a ranking multiplier here.
+#
+# Generic by construction: no project name appears in this file or in the
+# scoring code. To change a preference, change the label on the project.
+# ─────────────────────────────────────────────────────────────────────────────
+selection_priority_modifiers:
+  HIGHER: 1.15
+  NORMAL: 1.0
+  LOWER: 0.85
+
+#: Wording that marks business/stakeholder value in a claim. Used to score
+#: business_impact — matched against the CLAIM text, never added to it.
+business_impact_terms:
+  - client
+  - stakeholder
+  - recommendation
+  - decision
+  - presented
+  - findings
+  - business
+  - product
+  - policy
+  - reusable
+  - self-serve
+  - adoption
+  - retention
+
+#: Wording that marks depth of engineering in a claim. Scores technical_depth.
+technical_depth_terms:
+  - pipeline
+  - schema
+  - validation
+  - ingestion
+  - transformation
+  - etl
+  - elt
+  - streaming
+  - kafka
+  - spark
+  - pyspark
+  - sql
+  - database
+  - kubernetes
+  - docker
+  - api
+  - scheduling
+  - monitoring
+  - normalisation
+  - normalization
+
+# ═════════════════════════════════════════════════════════════════════════════
+# ARCHETYPES, most specific first. The first archetype whose score clears its
+# own threshold and beats every other wins; ties break on list order.
+# ═════════════════════════════════════════════════════════════════════════════
+archetypes:
+  # ───────────────────────────────────────────────────────────────────────
+  - name: ANALYTICS_ENGINEERING
+    #: Which graduate courses lead the Relevant Coursework line for this
+    #: archetype. ORDERING ONLY - every name is resolved against the Evidence
+    #: Bank's canonical course list and dropped if it is not there.
+    coursework_priority:
+      - Data Engineering at Scale
+      - Tools for Data Science
+      - Mathematical Foundations of Data Science and Machine Learning
+      - People Analytics
+      - Machine Learning in Healthcare
+    label: Analytics Engineering
+    resume_base: DATA_ENGINEERING
+    business_context: >-
+      Building trusted, reusable analytics datasets and metrics that other
+      teams depend on for decisions.
+    experience_bar_note: "Analytics/BI/data engineering experience, usually 2+ years."
+    title_signals:
+      analytics engineer: 6
+      analytics engineering: 6
+      bi engineer: 5
+      business intelligence engineer: 5
+      data platform: 3
+      data products: 3
+    jd_signals:
+      etl: 2
+      elt: 3
+      data warehouse: 2
+      data warehousing: 2
+      data lake: 2
+      dbt: 3
+      canonical dataset: 3
+      data quality: 3
+      data integrity: 2
+      self-serve: 2
+      analytics engineering: 4
+      business intelligence: 2
+      data transformation: 3
+      reusability: 2
+      stakeholder: 1
+      dimensional model: 3
+    primary_competencies:
+      [SQL, Python, data transformation, data quality, ETL/ELT,
+       analytics data products, stakeholder requirements]
+    secondary_competencies:
+      [Spark, databases, dashboarding, documentation, self-serve analytics,
+       schema design]
+    deemphasize:
+      [deep-learning model architecture, computer vision, NLP,
+       neural network training]
+    deemphasized_categories: [DEEP_LEARNING, COMPUTER_VISION, NLP, RESPONSIBLE_AI]
+    #: Claim role_families that count as on-target, best first.
+    claim_role_families:
+      [ANALYTICS_ENGINEERING, DATA_ENGINEERING, DATA_ANALYST, DATA_SCIENTIST,
+       TECHNICAL_PRODUCT, SWE]
+    summary_template: >-
+      {degree_short} candidate at {institution} with hands-on experience building
+      Python/SQL data workflows, pipelines, data-quality checks and
+      stakeholder-facing analytics across professional and client projects.
+      Experienced in {skills}.
+    summary_skills:
+      ["SQL", "Python", "ETL / ELT / data pipelines", "Data quality monitoring",
+       "Spark / PySpark", "Kafka", "PostgreSQL", "Data cleaning / feature engineering",
+       "Client delivery / stakeholder presentation"]
+    #: CORE_ROLE skills (D-70): what a strong general resume for this family
+    #: lists, curated BY NAME. Not a count - and not a category: sharing a
+    #: category with the role makes a skill a candidate, never a member. A
+    #: candidate outside this list renders only when the posting names it or
+    #: describes it (`skill_inference`). include and summary_skills count too.
+    core_skills:
+      - "ETL / ELT / data pipelines"
+      - "Data quality monitoring"
+      - "Schema validation"
+      - "Spark / PySpark"
+      - "Kafka"
+      - "PostgreSQL"
+      - "pandas / NumPy"
+      - "Data cleaning / feature engineering"
+      - "Product analytics / event-log analysis"
+      - "Metric debugging / instrumentation design"
+      - "Tableau"
+      - "Docker"
+      - "Git / GitHub / VS Code / Visual Studio / JIRA"
+    skill_groups:
+      - label: Programming & Querying
+        include: [Python, SQL]
+        categories: [PROGRAMMING]
+        exclude_categories: [DATABASES, DATA_ANALYSIS]
+      - label: Data Engineering
+        categories: [DATA_ENGINEERING, STREAMING, ANALYTICS_ENGINEERING]
+        # Docker and Kubernetes are CLOUD as well as DATA_ENGINEERING; they
+        # belong under infrastructure on this resume so the pipeline group
+        # keeps its room for transformation and data-quality items.
+        exclude_categories: [CLOUD]
+        prefer: [ETL / ELT / data pipelines, Spark / PySpark, Kafka,
+                 Data quality monitoring, Schema validation,
+                 Event-driven ingestion, Data cleaning / feature engineering]
+      - label: Databases
+        categories: [DATABASES, SQL]
+        prefer: [PostgreSQL, TimescaleDB, SQL Server / Oracle / MySQL]
+      - label: Analytics
+        categories: [DATA_ANALYSIS, PRODUCT_ANALYTICS, ANALYTICS, STATISTICS,
+                     VISUALIZATION, GEOSPATIAL]
+        exclude_categories: [BACKEND]
+        prefer: [pandas / NumPy, Product analytics / event-log analysis,
+                 Metric debugging / instrumentation design,
+                 Statistics / Probability / Linear Algebra, Streamlit,
+                 matplotlib / seaborn / Jupyter]
+      - label: Infrastructure & Collaboration
+        categories: [CLOUD, DEVTOOLS, PROJECT_MANAGEMENT, API, TESTING]
+        prefer: [Docker,
+                 "Kubernetes / OpenShift / Tekton / CronJobs / ConfigMaps / Secrets / PVCs / RBAC",
+                 Git / GitHub / VS Code / Visual Studio / JIRA, Azure DevOps,
+                 Agile / sprint participation]
+      - label: Machine Learning
+        categories: [MACHINE_LEARNING, DEEP_LEARNING, NLP, COMPUTER_VISION]
+
+  # ───────────────────────────────────────────────────────────────────────
+  - name: DATA_ENGINEERING
+    #: Which graduate courses lead the Relevant Coursework line for this
+    #: archetype. ORDERING ONLY - every name is resolved against the Evidence
+    #: Bank's canonical course list and dropped if it is not there.
+    coursework_priority:
+      - Data Engineering at Scale
+      - Tools for Data Science
+      - Mathematical Foundations of Data Science and Machine Learning
+      - Deep Learning for Data Science
+      - Machine Learning in Healthcare
+    label: Data Engineering
+    resume_base: DATA_ENGINEERING
+    business_context: >-
+      Building and operating the ingestion, storage and transformation systems
+      analytics and product teams run on.
+    experience_bar_note: "Pipeline and distributed-systems experience."
+    title_signals:
+      data engineer: 6
+      data engineering: 6
+      platform engineer: 4
+      pipeline engineer: 5
+      streaming: 3
+    jd_signals:
+      airflow: 3
+      kafka: 3
+      spark: 3
+      pipeline: 2
+      ingestion: 3
+      orchestration: 3
+      streaming: 3
+      partitioning: 2
+      throughput: 2
+      data lake: 2
+      etl: 2
+      elt: 2
+    primary_competencies:
+      [Python, SQL, ETL/ELT, streaming ingestion, distributed processing,
+       data modelling, orchestration]
+    secondary_competencies:
+      [containers, scheduling, data quality, monitoring, schema validation]
+    deemphasize: [computer vision, NLP, dashboard design]
+    deemphasized_categories: [COMPUTER_VISION, NLP, RESPONSIBLE_AI]
+    claim_role_families:
+      [DATA_ENGINEERING, ANALYTICS_ENGINEERING, SWE, DATA_SCIENTIST, DATA_ANALYST]
+    summary_template: >-
+      {degree_short} candidate at {institution} with hands-on experience building
+      event ingestion, batch transformation and data-quality components for
+      real-world technical projects. Experienced in {skills}.
+    summary_skills:
+      ["Python", "SQL", "Kafka", "Spark / PySpark", "ETL / ELT / data pipelines",
+       "Schema validation", "Data quality monitoring", "Docker",
+       "Kubernetes / OpenShift / Tekton / CronJobs / ConfigMaps / Secrets / PVCs / RBAC",
+       "PostgreSQL"]
+    #: CORE_ROLE skills (D-70): what a strong general resume for this family
+    #: lists, curated BY NAME. Not a count - and not a category: sharing a
+    #: category with the role makes a skill a candidate, never a member. A
+    #: candidate outside this list renders only when the posting names it or
+    #: describes it (`skill_inference`). include and summary_skills count too.
+    core_skills:
+      - "Kafka"
+      - "Spark / PySpark"
+      - "ETL / ELT / data pipelines"
+      - "Schema validation"
+      - "Data quality monitoring"
+      - "Event-driven ingestion"
+      - "Docker"
+      - "Kubernetes / OpenShift / Tekton / CronJobs / ConfigMaps / Secrets / PVCs / RBAC"
+      - "PostgreSQL"
+      - "TimescaleDB"
+      - "SQL Server / Oracle / MySQL"
+      - "pandas / NumPy"
+      - "Git / GitHub / VS Code / Visual Studio / JIRA"
+    skill_groups:
+      - label: Programming & Querying
+        include: [Python, SQL]
+        categories: [PROGRAMMING]
+        exclude_categories: [DATABASES, DATA_ANALYSIS]
+      - label: Data Engineering
+        categories: [DATA_ENGINEERING, STREAMING, ANALYTICS_ENGINEERING]
+      - label: Databases
+        categories: [DATABASES, SQL]
+      - label: Infrastructure & Collaboration
+        categories: [CLOUD, DEVTOOLS, PROJECT_MANAGEMENT, API, TESTING, BACKEND]
+      - label: Analytics
+        categories: [DATA_ANALYSIS, ANALYTICS, PRODUCT_ANALYTICS, STATISTICS,
+                     VISUALIZATION, GEOSPATIAL]
+      - label: Machine Learning
+        categories: [MACHINE_LEARNING, DEEP_LEARNING, NLP, COMPUTER_VISION]
+
+  # ───────────────────────────────────────────────────────────────────────
+  - name: PRODUCT_ANALYTICS
+    #: Which graduate courses lead the Relevant Coursework line for this
+    #: archetype. ORDERING ONLY - every name is resolved against the Evidence
+    #: Bank's canonical course list and dropped if it is not there.
+    coursework_priority:
+      - People Analytics
+      - Tools for Data Science
+      - Mathematical Foundations of Data Science and Machine Learning
+      - Machine Learning in Healthcare
+      - Data Engineering at Scale
+    label: Product & Decision Analytics
+    resume_base: ANALYTICS_PRODUCT
+    business_context: >-
+      Turning product and operational data into decisions, with metrics that
+      partner teams trust.
+    experience_bar_note: "Analytics experience with direct stakeholder exposure."
+    title_signals:
+      product analyst: 6
+      product analytics: 6
+      data analyst: 5
+      business analyst: 4
+      decision scientist: 6
+      insights analyst: 5
+      growth analyst: 5
+    jd_signals:
+      a/b test: 3
+      experimentation: 3
+      funnel: 3
+      retention: 3
+      cohort: 3
+      engagement: 2
+      kpi: 2
+      metric definition: 3
+      dashboard: 2
+      stakeholder: 2
+      product manager: 2
+    primary_competencies:
+      [SQL, Python, product metrics, experimentation, funnel and retention
+       analysis, stakeholder communication]
+    secondary_competencies:
+      [data cleaning, visualization, statistics, instrumentation design]
+    deemphasize: [deep-learning model architecture, computer vision, Kubernetes]
+    deemphasized_categories: [DEEP_LEARNING, COMPUTER_VISION, NLP, RESPONSIBLE_AI]
+    claim_role_families:
+      [PRODUCT_ANALYTICS, DATA_ANALYST, TECHNICAL_PRODUCT, DATA_SCIENTIST,
+       ANALYTICS_ENGINEERING]
+    summary_template: >-
+      {degree_short} candidate at {institution} with hands-on experience turning
+      product and operational data into decisions — event-log analysis, retention
+      and funnel work, and client-facing recommendations. Experienced in {skills}.
+    summary_skills:
+      ["SQL", "Python", "pandas / NumPy",
+       "Product analytics / event-log analysis",
+       "Retention / engagement / funnel and drop-off analysis",
+       "Metric debugging / instrumentation design",
+       "Client delivery / stakeholder presentation",
+       "Statistics / Probability / Linear Algebra", "Streamlit"]
+    #: CORE_ROLE skills (D-70): what a strong general resume for this family
+    #: lists, curated BY NAME. Not a count - and not a category: sharing a
+    #: category with the role makes a skill a candidate, never a member. A
+    #: candidate outside this list renders only when the posting names it or
+    #: describes it (`skill_inference`). include and summary_skills count too.
+    core_skills:
+      - "pandas / NumPy"
+      - "Product analytics / event-log analysis"
+      - "Retention / engagement / funnel and drop-off analysis"
+      - "Metric debugging / instrumentation design"
+      - "Statistics / Probability / Linear Algebra"
+      - "Treatment-effect estimation (T-learner)"
+      - "Tableau"
+      - "matplotlib / seaborn / Jupyter"
+      - "Streamlit"
+      - "Data cleaning / feature engineering"
+      - "Client delivery / stakeholder presentation"
+      - "Qualitative / thematic analysis"
+      - "Git / GitHub / VS Code / Visual Studio / JIRA"
+    skill_groups:
+      - label: Programming & Querying
+        include: [SQL, Python]
+        categories: [PROGRAMMING]
+        exclude_categories: [DATABASES]
+      - label: Product Analytics
+        categories: [PRODUCT_ANALYTICS, ANALYTICS, DATA_ANALYSIS, GEOSPATIAL]
+      - label: Statistics & Visualization
+        categories: [STATISTICS, VISUALIZATION]
+      - label: Data & Databases
+        categories: [DATABASES, SQL, DATA_ENGINEERING, STREAMING,
+                     ANALYTICS_ENGINEERING]
+      - label: Tools & Collaboration
+        categories: [DEVTOOLS, CLOUD, PROJECT_MANAGEMENT, CLIENT_COMMUNICATION]
+      - label: Machine Learning
+        categories: [MACHINE_LEARNING, DEEP_LEARNING, NLP, COMPUTER_VISION]
+
+  # ───────────────────────────────────────────────────────────────────────
+  - name: MACHINE_LEARNING_ENGINEERING
+    #: Which graduate courses lead the Relevant Coursework line for this
+    #: archetype. ORDERING ONLY - every name is resolved against the Evidence
+    #: Bank's canonical course list and dropped if it is not there.
+    coursework_priority:
+      - Deep Learning for Data Science
+      - Mathematical Foundations of Data Science and Machine Learning
+      - Tools for Data Science
+      - Data Engineering at Scale
+      - Machine Learning in Healthcare
+    label: Machine Learning Engineering
+    resume_base: DS_ML_AI
+    business_context: >-
+      Training, evaluating and shipping models as part of a production system.
+    experience_bar_note: "Modelling plus engineering experience."
+    title_signals:
+      machine learning engineer: 6
+      ml engineer: 6
+      mlops: 5
+      deep learning: 5
+      computer vision engineer: 6
+      nlp engineer: 6
+      research engineer: 4
+    jd_signals:
+      pytorch: 3
+      tensorflow: 3
+      model training: 3
+      inference: 3
+      embeddings: 2
+      fine-tun: 3
+      model serving: 3
+      feature store: 2
+      neural network: 3
+    primary_competencies:
+      [Python, model training, model evaluation, feature engineering,
+       deep learning frameworks]
+    secondary_competencies: [SQL, data pipelines, containers, experiment tracking]
+    deemphasize: [manual QA, ticket triage]
+    deemphasized_categories: [TESTING, PROJECT_MANAGEMENT, LEADERSHIP]
+    claim_role_families:
+      [ML_ENGINEER, AI_ENGINEER, DATA_SCIENTIST, AI_SOFTWARE_ENGINEER,
+       DATA_ENGINEERING]
+    summary_template: >-
+      {degree_short} candidate at {institution} with hands-on experience building
+      and evaluating machine-learning components alongside the data pipelines
+      that feed them. Experienced in {skills}.
+    summary_skills:
+      ["Python", "PyTorch", "TensorFlow / Keras", "Neural networks",
+       "scikit-learn", "Model evaluation", "pandas / NumPy", "SQL",
+       "ETL / ELT / data pipelines", "Docker"]
+    #: CORE_ROLE skills (D-70): what a strong general resume for this family
+    #: lists, curated BY NAME. Not a count - and not a category: sharing a
+    #: category with the role makes a skill a candidate, never a member. A
+    #: candidate outside this list renders only when the posting names it or
+    #: describes it (`skill_inference`). include and summary_skills count too.
+    core_skills:
+      - "PyTorch"
+      - "TensorFlow / Keras"
+      - "Neural networks"
+      - "scikit-learn"
+      - "Model evaluation"
+      - "XGBoost"
+      - "pandas / NumPy"
+      - "Data cleaning / feature engineering"
+      - "Spark / PySpark"
+      - "ETL / ELT / data pipelines"
+      - "Docker"
+      - "Git / GitHub / VS Code / Visual Studio / JIRA"
+    skill_groups:
+      - label: Programming
+        include: [Python, SQL]
+        categories: [PROGRAMMING]
+        exclude_categories: [DATABASES]
+      - label: Machine Learning
+        categories: [MACHINE_LEARNING, DEEP_LEARNING, NLP, COMPUTER_VISION,
+                     RESPONSIBLE_AI, AI_LLM]
+      - label: Data & Pipelines
+        categories: [DATA_ENGINEERING, STREAMING, DATA_ANALYSIS, DATABASES, SQL,
+                     ANALYTICS_ENGINEERING]
+      - label: Tools & Platforms
+        categories: [CLOUD, DEVTOOLS, BACKEND, API]
+      - label: Analytics
+        categories: [ANALYTICS, PRODUCT_ANALYTICS, STATISTICS, VISUALIZATION,
+                     GEOSPATIAL]
+
+  # ───────────────────────────────────────────────────────────────────────
+  - name: DATA_SCIENCE
+    #: Which graduate courses lead the Relevant Coursework line for this
+    #: archetype. ORDERING ONLY - every name is resolved against the Evidence
+    #: Bank's canonical course list and dropped if it is not there.
+    coursework_priority:
+      - Mathematical Foundations of Data Science and Machine Learning
+      - Deep Learning for Data Science
+      - Tools for Data Science
+      - Machine Learning in Healthcare
+      - Data Engineering at Scale
+    label: Data Science
+    resume_base: DS_ML_AI
+    business_context: >-
+      Analysis and modelling that produces a decision or a shipped model.
+    experience_bar_note: "Applied statistics and modelling experience."
+    title_signals:
+      data scientist: 6
+      data science: 5
+      quantitative analyst: 4
+      statistician: 4
+      applied scientist: 5
+    jd_signals:
+      statistical: 3
+      regression: 3
+      forecasting: 3
+      hypothesis: 3
+      predictive model: 3
+      machine learning: 2
+      experiment: 2
+      scikit-learn: 3
+    primary_competencies:
+      [Python, SQL, statistical modelling, feature engineering, model evaluation,
+       communicating results]
+    secondary_competencies: [data pipelines, visualization, experimentation]
+    deemphasize: [manual QA, ticket triage]
+    deemphasized_categories: [TESTING, LEADERSHIP, PROJECT_MANAGEMENT]
+    claim_role_families:
+      [DATA_SCIENTIST, ML_ENGINEER, DATA_ANALYST, ANALYTICS_ENGINEERING,
+       DATA_ENGINEERING]
+    summary_template: >-
+      {degree_short} candidate at {institution} with hands-on experience building
+      data science and machine-learning components, plus the data workflows that
+      support them, for real-world technical projects. Experienced in {skills}.
+    summary_skills:
+      ["Python", "SQL", "pandas / NumPy", "scikit-learn",
+       "Statistics / Probability / Linear Algebra",
+       "Data cleaning / feature engineering", "Model evaluation",
+       "Spark / PySpark", "matplotlib / seaborn / Jupyter"]
+    #: CORE_ROLE skills (D-70): what a strong general resume for this family
+    #: lists, curated BY NAME. Not a count - and not a category: sharing a
+    #: category with the role makes a skill a candidate, never a member. A
+    #: candidate outside this list renders only when the posting names it or
+    #: describes it (`skill_inference`). include and summary_skills count too.
+    core_skills:
+      - "pandas / NumPy"
+      - "scikit-learn"
+      - "Statistics / Probability / Linear Algebra"
+      - "Regression / classification / clustering"
+      - "Predictive modeling"
+      - "Model evaluation"
+      - "XGBoost"
+      - "Random Forest"
+      - "SHAP / model interpretability"
+      - "Data cleaning / feature engineering"
+      - "matplotlib / seaborn / Jupyter"
+      - "PyTorch"
+      - "TensorFlow / Keras"
+      - "Spark / PySpark"
+      - "Git / GitHub / VS Code / Visual Studio / JIRA"
+    skill_groups:
+      - label: Programming & Querying
+        include: [Python, SQL]
+        categories: [PROGRAMMING]
+        exclude_categories: [DATABASES]
+      - label: Modelling & Statistics
+        categories: [MACHINE_LEARNING, STATISTICS, DEEP_LEARNING]
+      - label: Data & Analytics
+        categories: [DATA_ANALYSIS, ANALYTICS, PRODUCT_ANALYTICS, GEOSPATIAL,
+                     VISUALIZATION]
+      - label: Data Engineering
+        categories: [DATA_ENGINEERING, STREAMING, DATABASES, SQL,
+                     ANALYTICS_ENGINEERING]
+      - label: Tools & Platforms
+        categories: [CLOUD, DEVTOOLS, BACKEND, API, NLP, COMPUTER_VISION]
+
+  # ───────────────────────────────────────────────────────────────────────
+  - name: APPLIED_AI_SOFTWARE
+    #: Which graduate courses lead the Relevant Coursework line for this
+    #: archetype. ORDERING ONLY - every name is resolved against the Evidence
+    #: Bank's canonical course list and dropped if it is not there.
+    coursework_priority:
+      - Deep Learning for Data Science
+      - Tools for Data Science
+      - Mathematical Foundations of Data Science and Machine Learning
+      - Data Engineering at Scale
+      - AI Ethics
+    label: Applied AI / Software
+    resume_base: APPLIED_AI_SOFTWARE
+    business_context: >-
+      Shipping software with AI components inside a real application.
+    experience_bar_note: "Backend engineering with applied AI exposure."
+    title_signals:
+      ai engineer: 6
+      applied ai: 6
+      ai software engineer: 6
+      forward deployed: 5
+      solutions engineer: 3
+    jd_signals:
+      api: 2
+      backend: 2
+      microservice: 3
+      deploy: 2
+      latency: 2
+      inference: 2
+      production system: 2
+    primary_competencies:
+      [Python, REST APIs, applied ML components, backend services, testing]
+    secondary_competencies: [SQL, containers, data pipelines]
+    deemphasize: [geospatial analysis, dashboard design]
+    deemphasized_categories: [GEOSPATIAL, VISUALIZATION, RESPONSIBLE_AI]
+    claim_role_families:
+      [AI_SOFTWARE_ENGINEER, AI_ENGINEER, SWE, ML_ENGINEER, DATA_ENGINEERING]
+    summary_template: >-
+      {degree_short} candidate at {institution} with hands-on experience building
+      and testing backend software alongside applied machine-learning components.
+      Experienced in {skills}.
+    summary_skills:
+      ["Python", "SQL", "REST APIs / Postman / Swagger", "PyTorch",
+       "TensorFlow / Keras", "Docker", "Flask", "C#",
+       "MSTest / unit testing / mocking"]
+    #: CORE_ROLE skills (D-70): what a strong general resume for this family
+    #: lists, curated BY NAME. Not a count - and not a category: sharing a
+    #: category with the role makes a skill a candidate, never a member. A
+    #: candidate outside this list renders only when the posting names it or
+    #: describes it (`skill_inference`). include and summary_skills count too.
+    core_skills:
+      - "PyTorch"
+      - "TensorFlow / Keras"
+      - "Neural networks"
+      - "scikit-learn"
+      - "Model evaluation"
+      - "LLM evaluation / LLM-as-judge"
+      - "Gemini"
+      - "Ollama / Llama 3.2"
+      - "REST APIs / Postman / Swagger"
+      - "Flask"
+      - "MSTest / unit testing / mocking"
+      - ".NET / Entity Framework"
+      - "Docker"
+      - "pandas / NumPy"
+      - "Git / GitHub / VS Code / Visual Studio / JIRA"
+    skill_groups:
+      - label: Programming
+        include: [Python, SQL, C#]
+        categories: [PROGRAMMING]
+        exclude_categories: [DATABASES]
+      - label: Engineering
+        categories: [SOFTWARE_ENGINEERING, BACKEND, API, TESTING]
+      - label: AI & ML
+        categories: [MACHINE_LEARNING, DEEP_LEARNING, NLP, COMPUTER_VISION, AI_LLM,
+                     RESPONSIBLE_AI]
+        #: AI_LLM added 2026-10-26 (D-67) for the TA teaching prototype. The
+        #: frameworks lead and the evaluation technique follows. RESPONSIBLE_AI
+        #: is de-emphasised on this archetype, so "Responsible AI / AI Ethics"
+        #: renders only when a posting names it (D-69).
+        prefer: ["PyTorch", "TensorFlow / Keras", "LLM evaluation / LLM-as-judge"]
+      - label: Data & Databases
+        categories: [DATABASES, SQL, DATA_ENGINEERING, STREAMING, DATA_ANALYSIS,
+                     ANALYTICS_ENGINEERING]
+      - label: Tools & Platforms
+        categories: [CLOUD, DEVTOOLS, PROJECT_MANAGEMENT]
+
+  # ───────────────────────────────────────────────────────────────────────
+  - name: SOFTWARE_ENGINEERING
+    #: Which graduate courses lead the Relevant Coursework line for this
+    #: archetype. ORDERING ONLY - every name is resolved against the Evidence
+    #: Bank's canonical course list and dropped if it is not there.
+    coursework_priority:
+      - Tools for Data Science
+      - Data Engineering at Scale
+      - Deep Learning for Data Science
+      - Mathematical Foundations of Data Science and Machine Learning
+    label: Software Engineering
+    resume_base: OPTIONAL_SOFTWARE
+    business_context: "Building and testing production application software."
+    experience_bar_note: "General backend or full-stack engineering."
+    title_signals:
+      software engineer: 5
+      software development: 4
+      backend engineer: 5
+      full stack: 4
+      sdet: 5
+      qa engineer: 4
+    jd_signals:
+      unit test: 3
+      code review: 2
+      ci/cd: 2
+      rest: 2
+      microservice: 2
+      agile: 1
+    primary_competencies: [Python, C#, REST APIs, testing, SQL]
+    secondary_competencies: [containers, CI/CD, Agile delivery]
+    deemphasize: [deep learning, geospatial analysis]
+    deemphasized_categories: [DEEP_LEARNING, COMPUTER_VISION, NLP, GEOSPATIAL,
+                              RESPONSIBLE_AI]
+    claim_role_families: [SWE, AI_SOFTWARE_ENGINEER, DATA_ENGINEERING, DATA_SCIENTIST]
+    summary_template: >-
+      {degree_short} candidate at {institution} with hands-on experience building
+      and testing backend software for real-world technical projects.
+      Experienced in {skills}.
+    summary_skills:
+      ["Python", "C#", "SQL", ".NET / Entity Framework",
+       "REST APIs / Postman / Swagger", "MSTest / unit testing / mocking",
+       "Git / GitHub / VS Code / Visual Studio / JIRA", "Docker"]
+    #: CORE_ROLE skills (D-70): what a strong general resume for this family
+    #: lists, curated BY NAME. Not a count - and not a category: sharing a
+    #: category with the role makes a skill a candidate, never a member. A
+    #: candidate outside this list renders only when the posting names it or
+    #: describes it (`skill_inference`). include and summary_skills count too.
+    core_skills:
+      - ".NET / Entity Framework"
+      - "REST APIs / Postman / Swagger"
+      - "MSTest / unit testing / mocking"
+      - "LINQ"
+      - "Flask"
+      - "PostgreSQL"
+      - "SQL Server / Oracle / MySQL"
+      - "Docker"
+      - "Kubernetes / OpenShift / Tekton / CronJobs / ConfigMaps / Secrets / PVCs / RBAC"
+      - "Git / GitHub / VS Code / Visual Studio / JIRA"
+      - "Azure DevOps"
+      - "Agile / sprint participation"
+    skill_groups:
+      - label: Programming
+        include: [Python, C#, SQL]
+        categories: [PROGRAMMING]
+        exclude_categories: [DATABASES]
+      - label: Engineering
+        categories: [SOFTWARE_ENGINEERING, BACKEND, API, TESTING]
+        prefer: [.NET / Entity Framework, REST APIs / Postman / Swagger,
+                 MSTest / unit testing / mocking, LINQ, Flask]
+      - label: Data & Databases
+        categories: [DATABASES, SQL, DATA_ENGINEERING, STREAMING, DATA_ANALYSIS,
+                     ANALYTICS_ENGINEERING]
+      - label: Tools & Platforms
+        categories: [CLOUD, DEVTOOLS, PROJECT_MANAGEMENT]
+      - label: Machine Learning
+        categories: [MACHINE_LEARNING, DEEP_LEARNING, NLP, COMPUTER_VISION, AI_LLM]
+
+#: STRONG_INFERENCE (D-70). A posting that DESCRIBES a capability, in words
+#: that are not the skill's own name, admits the demonstrated skill that
+#: implements it - "tree-based models" admits XGBoost and Random Forest. A
+#: signal matches when all its words appear in the posting. Every skill named
+#: here must already be resume-usable in skills.yaml; a rule can never create
+#: one, and a rule pointing at a gap (AWS, Airflow, RAG) is a defect.
+skill_inference:
+  - signals: [tree-based, gradient boosting, boosted trees, ensemble models]
+    skills: [XGBoost, Random Forest]
+  - signals: [restful, web services, backend services, microservices, api development]
+    skills: [REST APIs / Postman / Swagger, Flask]
+  - signals: [unit tests, test automation, automated testing, test coverage]
+    skills: [MSTest / unit testing / mocking]
+  - signals: [containers, containerization, containerized]
+    skills: [Docker]
+  - signals: [container orchestration, openshift]
+    skills: ["Kubernetes / OpenShift / Tekton / CronJobs / ConfigMaps / Secrets / PVCs / RBAC"]
+  - signals: [streaming, event-driven, real-time pipelines, message queues]
+    skills: [Kafka, Event-driven ingestion]
+  - signals: [distributed processing, big data, distributed data processing]
+    skills: [Spark / PySpark]
+  - signals: [data pipelines, pipelines, data ingestion]
+    skills: [ETL / ELT / data pipelines]
+  - signals: [data quality, data validation, data contracts]
+    skills: [Data quality monitoring, Schema validation]
+  - signals: [deep learning, neural network, neural networks]
+    skills: [PyTorch, TensorFlow / Keras, Neural networks]
+  - signals: [computer vision, image classification, image data]
+    skills: [CNNs, Computer vision - pretrained image embeddings]
+  - signals: [nlp, natural language processing, text classification, sequence models]
+    skills: [NLP - tokenisation and sequence modelling, LSTMs / RNNs]
+  - signals: [llm evaluation, model-as-judge, llm-as-judge, evals, evaluate llm]
+    skills: [LLM evaluation / LLM-as-judge]
+  - signals: [llm apis, hosted llm, google ai]
+    skills: [Gemini]
+  - signals: [open-source models, open-weights, local models, local inference]
+    skills: [Ollama / Llama 3.2]
+  - signals: [structured outputs, structured output, json outputs, json schema]
+    skills: [Structured LLM outputs / JSON validation]
+  - signals: [ai safety, fairness, responsible, ethics]
+    skills: [Responsible AI / AI Ethics]
+  - signals: [experimentation, a/b, causal, treatment effect, uplift, heterogeneous effects]
+    skills: [Treatment-effect estimation (T-learner)]
+  - signals: [interpretability, explainability, explainable]
+    skills: [SHAP / model interpretability, Feature importance analysis]
+  - signals: [predictive models, predictive modelling, statistical modeling, statistical modelling]
+    skills: [Predictive modeling, Regression / classification / clustering]
+  - signals: [regression, classification, clustering]
+    skills: [Regression / classification / clustering]
+  - signals: [imbalanced, precision, recall, thresholds]
+    skills: [Classification threshold / precision-recall analysis]
+  - signals: [statistical, statistics, hypothesis testing, inference]
+    skills: [Statistics / Probability / Linear Algebra]
+  - signals: [dashboards, dashboard, data visualization, visualisation]
+    skills: [Tableau, Streamlit, matplotlib / seaborn / Jupyter]
+  - signals: [stakeholder, stakeholders, presenting findings, communicating results]
+    skills: [Client delivery / stakeholder presentation]
+  - signals: [qualitative, survey, customer feedback, user feedback]
+    skills: [Qualitative / thematic analysis]
+  - signals: [retention, cohort, funnel, churn, engagement]
+    skills: [Retention / engagement / funnel and drop-off analysis]
+  - signals: [instrumentation, event data, tracking plan, product metrics]
+    skills: [Product analytics / event-log analysis, Metric debugging / instrumentation design]
+  - signals: [geospatial, location data, spatial]
+    skills: [GeoPandas / Shapely / geocoding / spatial joins / distance features]
+  - signals: [time-series database, time series database]
+    skills: [TimescaleDB]
+  - signals: [unix, shell scripting, command line]
+    skills: [Linux, Bash]
+  - signals: [scrum, sprint]
+    skills: [Agile / sprint participation, Scrum Master]
+  - signals: [ci/cd, devops, continuous integration]
+    skills: [Azure DevOps, Git / GitHub / VS Code / Visual Studio / JIRA]
+  - signals: [version control]
+    skills: [Git / GitHub / VS Code / Visual Studio / JIRA]
+  - signals: [teaching, mentoring, technical writing, documentation]
+    skills: [Technical communication / teaching]
+
+#: Used when nothing scores above the floor. Keeps the existing behaviour rather
+#: than guessing: the role family's own base, ordered as it always was.
+fallback_archetype: DATA_SCIENCE
+
+#: An archetype must reach this weighted score before it displaces the fallback.
+#: Below it the posting has not said enough to position against.
+minimum_archetype_score: 5
+
+#: Role families the classifier emits → the archetype that usually fits them.
+#: Used ONLY to break ties and to seed the score, never to override strong
+#: posting evidence. This is what stops "Analytics Engineer, Data Science" from
+#: being positioned as a modelling role purely because of the title suffix.
+role_family_affinity:
+  ANALYTICS_ENGINEERING: ANALYTICS_ENGINEERING
+  DATA_ENGINEERING: DATA_ENGINEERING
+  DATA_ANALYST: PRODUCT_ANALYTICS
+  PRODUCT_ANALYTICS: PRODUCT_ANALYTICS
+  DECISION_SCIENCE: PRODUCT_ANALYTICS
+  TECHNICAL_PRODUCT: PRODUCT_ANALYTICS
+  DATA_SCIENTIST: DATA_SCIENCE
+  ML_ENGINEER: MACHINE_LEARNING_ENGINEERING
+  AI_ENGINEER: MACHINE_LEARNING_ENGINEERING
+  APPLIED_AI: APPLIED_AI_SOFTWARE
+  AI_SOFTWARE_ENGINEER: APPLIED_AI_SOFTWARE
+  SOFTWARE_ENGINEERING: SOFTWARE_ENGINEERING
+#: Weight given to that affinity. Deliberately small — one strong title signal
+#: (6) outweighs it, so the posting always wins over the classifier's label.
+role_family_affinity_weight: 2

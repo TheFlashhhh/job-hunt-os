@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+{% block title %}{{ job.title }} · Job Hunt OS{% endblock %}
+{% block body %}
+
+{% set score = analysis.priority_score if analysis else None %}
+{% set elig = analysis.eligibility if analysis else None %}
+{% set spon = analysis.sponsorship if analysis else None %}
+{% set legit = analysis.legitimacy if analysis else None %}
+
+<div class="between">
+  <div>
+    <h1>{{ job.title }}</h1>
+    <p class="sub">{{ job.company_name }}
+      {% if job.location_raw %} · {{ job.location_raw }}{% endif %}
+      {% if job.remote_status != 'UNKNOWN' %} · {{ job.remote_status.title() }}{% endif %}
+      {% if job.canonical_url %} · <a href="{{ job.canonical_url }}" target="_blank" rel="noopener">Open posting ↗</a>{% endif %}
+    </p>
+  </div>
+  <div style="text-align:right">
+    {% if score %}
+      <div style="font-size:34px;font-weight:700;letter-spacing:-.03em;line-height:1">{{ score.total|round(0)|int }}<span class="dim" style="font-size:16px">/100</span></div>
+      <span class="tag {{ 't-good' if score.band=='HIGH' else ('t-warn' if score.band=='MEDIUM' else 't-dim') }}">{{ score.band }} priority</span>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row" style="margin-bottom:16px">
+  <span class="tag t-info">{{ job.search_lane.replace('_',' ').title() }}</span>
+  <span class="tag t-dim">{{ job.role_family.replace('_',' ').title() }}</span>
+  <span class="tag {{ 't-good' if job.role_priority=='PRIMARY' else 't-dim' }}">{{ job.role_priority.title() }}</span>
+  <span class="tag {{ 't-good' if job.eligibility_status in ['ELIGIBLE','LIKELY_ELIGIBLE'] else ('t-warn' if job.eligibility_status=='UNCERTAIN' else 't-bad') }}">{{ job.eligibility_status.replace('_',' ').title() }}</span>
+  {% if job.legitimacy_status != 'LEGITIMACY_NORMAL' %}
+    <span class="tag t-warn">{{ job.legitimacy_status.replace('_',' ').title() }}</span>
+  {% endif %}
+  {% if job.screen_status != 'PASSED' %}
+    <span class="tag t-warn">Screen: {{ job.screen_status.title() }}</span>
+  {% endif %}
+</div>
+
+{% if job.screen_reason and job.screen_status != 'PASSED' %}
+  <div class="notice warn">{{ job.screen_reason }}</div>
+{% endif %}
+
+<div class="grid three">
+  <div>
+    <!-- ── FIT ─────────────────────────────────────────────────── -->
+    <div class="card">
+      <h3>Fit breakdown</h3>
+      {% if score %}
+        {% for key, value in score.dimensions.items() %}
+          {% set cap = score.max_dimensions.get(key, 1) %}
+          <div style="margin-bottom:9px">
+            <div class="between xs">
+              <span>{{ key.replace('_',' ').title() }}</span>
+              <span class="muted">{{ value }} / {{ cap }}</span>
+            </div>
+            <div class="bar"><i style="width:{{ (100*value/cap) if cap else 0 }}%"></i></div>
+          </div>
+        {% endfor %}
+        <div class="xs dim" style="margin-top:10px">{{ score.explanation }}</div>
+      {% else %}<div class="empty">Not analyzed yet.</div>{% endif %}
+    </div>
+
+    <!-- ── EVIDENCE MATCH ──────────────────────────────────────── -->
+    <div class="card" style="margin-top:12px">
+      <h3>Requirement → Evidence match</h3>
+      {% if requirements %}
+        <div class="scroll">
+        <table>
+          <thead><tr><th>Requirement</th><th>Kind</th><th>Support</th><th>Evidence</th></tr></thead>
+          <tbody>
+          {% for r in requirements %}
+            <tr>
+              <td>{{ r.text }}
+                {% if r.transferable_only %}
+                  <div class="xs" style="color:var(--warn)">Transferable evidence only — not direct experience.</div>
+                {% endif %}
+                {% if r.ownership_gated %}
+                  <div class="xs" style="color:var(--info)">Ownership unresolved — project-level wording only.</div>
+                {% endif %}
+              </td>
+              <td class="xs muted">{{ r.kind.replace('_',' ').title() }}</td>
+              <td>
+                <span class="tag {{ 't-good' if r.support_status=='SUPPORTED' else ('t-warn' if r.support_status=='PARTIALLY_SUPPORTED' else 't-bad') }}">
+                  {{ r.support_status.replace('_',' ').title() }}</span>
+              </td>
+              <td class="mono xs">{{ r.evidence_ids|join(', ') if r.evidence_ids else '—' }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        </div>
+      {% else %}
+        <div class="empty">No structured requirements were extracted from this posting.</div>
+      {% endif %}
+    </div>
+
+    <!-- ── WHY / RISKS / GAPS ──────────────────────────────────── -->
+    <div class="grid two" style="margin-top:12px">
+      <div class="card">
+        <h3>Why apply</h3>
+        {% if analysis and analysis.why_apply %}<p class="small">{{ analysis.why_apply }}</p>
+        {% else %}<div class="empty">No positive signals recorded.</div>{% endif %}
+
+        {% if analysis and analysis.strongest_evidence %}
+          <h3 style="margin-top:14px">Strongest evidence</h3>
+          <div class="mono xs">{{ analysis.strongest_evidence|join(', ') }}</div>
+        {% endif %}
+      </div>
+      <div class="card">
+        <h3>Risks</h3>
+        {% if analysis and analysis.risks %}
+          <ul class="clean small">{% for r in analysis.risks %}<li>{{ r }}</li>{% endfor %}</ul>
+        {% else %}<div class="empty">No risks flagged.</div>{% endif %}
+
+        {% if analysis and analysis.missing_requirements %}
+          <h3 style="margin-top:14px">Missing requirements</h3>
+          <ul class="clean small">{% for m in analysis.missing_requirements %}<li>{{ m }}</li>{% endfor %}</ul>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SIDEBAR ───────────────────────────────────────────────── -->
+  <div>
+    <div class="card">
+      <h3>Application status</h3>
+      <form method="post" action="/jobs/{{ job.job_id }}/status">
+        <div class="field">
+          <select name="new_status" style="width:100%">
+            {% for s in statuses %}
+              <option value="{{ s }}" {% if job.application and job.application.current_status==s %}selected{% endif %}>{{ s.replace('_',' ').title() }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field"><input name="note" placeholder="Note (optional)" style="width:100%"></div>
+        <button type="submit" style="width:100%">Update status</button>
+      </form>
+      <form method="post" action="/jobs/{{ job.job_id }}/reanalyze" style="margin-top:8px">
+        <button class="ghost" type="submit" style="width:100%">Re-analyze</button>
+      </form>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <h3>Eligibility</h3>
+      <div class="row"><span class="tag {{ 't-good' if job.eligibility_status in ['ELIGIBLE','LIKELY_ELIGIBLE'] else ('t-warn' if job.eligibility_status=='UNCERTAIN' else 't-bad') }}">{{ job.eligibility_status.replace('_',' ').title() }}</span></div>
+      {% if elig and elig.reasons %}
+        <ul class="clean small" style="margin-top:8px">{% for r in elig.reasons %}<li>{{ r }}</li>{% endfor %}</ul>
+      {% endif %}
+
+      <h3 style="margin-top:14px">Work authorization</h3>
+      <span class="tag t-warn">{{ job.authorization_state.replace('_',' ').title() }}</span>
+      <div class="xs dim" style="margin-top:6px">
+        {{ elig.authorization_note if elig and elig.authorization_note else 'Must be verified with BU/ISSO for this specific role.' }}
+      </div>
+      <div class="notice warn xs" style="margin-top:8px">
+        This system never decides work authorization. Only you may mark a role
+        <strong>AUTHORIZED_CONFIRMED</strong>, and only after authorization has actually been received.
+      </div>
+      {% if job.authorization_wording_verbatim %}
+        <h3 style="margin-top:12px">Posting's wording (verbatim)</h3>
+        <div class="xs muted" style="font-style:italic">"{{ job.authorization_wording_verbatim[:600] }}"</div>
+      {% endif %}
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <h3>Sponsorship</h3>
+      <div class="xs muted">Role-specific signal</div>
+      <span class="tag {{ 't-good' if job.sponsorship_role_signal in ['SPONSORSHIP_CONFIRMED','SPONSORSHIP_LIKELY'] else ('t-bad' if 'NO_' in job.sponsorship_role_signal or 'REQUIRED' in job.sponsorship_role_signal else 't-dim') }}">
+        {{ job.sponsorship_role_signal.replace('_',' ').title() }}</span>
+      {% if job.sponsorship_quote %}
+        <div class="xs muted" style="margin-top:6px;font-style:italic">"{{ job.sponsorship_quote[:400] }}"</div>
+      {% endif %}
+      <div class="xs muted" style="margin-top:12px">Company historical context</div>
+      <span class="tag t-dim">{{ (spon.company_context if spon else 'NOT_CHECKED').replace('_',' ').title() }}</span>
+      <div class="xs dim" style="margin-top:6px">
+        Historical, company-level only. It says nothing about this role, this team's
+        budget, or current policy.
+      </div>
+    </div>
+
+    {% if legit and legit.status != 'LEGITIMACY_NORMAL' %}
+    <div class="card" style="margin-top:12px">
+      <h3>Legitimacy</h3>
+      <span class="tag t-warn">{{ legit.status.replace('_',' ').title() }}</span>
+      {% if legit.evidence %}
+        <ul class="clean small" style="margin-top:8px">{% for e in legit.evidence %}<li>{{ e }}</li>{% endfor %}</ul>
+      {% endif %}
+      <div class="xs dim" style="margin-top:6px">{{ legit.explanation }}</div>
+    </div>
+    {% endif %}
+
+    <div class="card" style="margin-top:12px">
+      <h3>Dates &amp; schedule</h3>
+      <table>
+        <tbody>
+          <tr><td class="muted xs">Posted</td><td class="xs">{{ job.posted_date or '—' }}
+            <span class="dim">({{ job.posted_date_confidence.title() }})</span></td></tr>
+          <tr><td class="muted xs">First seen</td><td class="xs">{{ job.first_seen.date() }}</td></tr>
+          <tr><td class="muted xs">Last seen</td><td class="xs">{{ job.last_seen.date() }}</td></tr>
+          <tr><td class="muted xs">Deadline</td><td class="xs">{{ job.deadline or '—' }}</td></tr>
+          {% if job.weekly_hours %}<tr><td class="muted xs">Hours/week</td><td class="xs">{{ job.weekly_hours }}</td></tr>{% endif %}
+          {% if job.requires_enrollment %}<tr><td class="muted xs">Enrollment</td><td class="xs">Required</td></tr>{% endif %}
+          {% if job.academic_credit_required %}<tr><td class="muted xs">Credit</td><td class="xs">Required</td></tr>{% endif %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <h3>Provenance</h3>
+      <table>
+        <tbody>
+          <tr><td class="muted xs">Discovered via</td><td class="xs mono">{{ job.discovery_source }}</td></tr>
+          <tr><td class="muted xs">Canonical source</td><td class="xs mono">{{ job.canonical_source or '—' }}</td></tr>
+          <tr><td class="muted xs">Verification</td><td class="xs mono">{{ job.canonical_verification }}</td></tr>
+          <tr><td class="muted xs">Evidence Bank</td><td class="xs mono">v{{ job.evidence_bank_version or '—' }}</td></tr>
+          <tr><td class="muted xs">Parser</td><td class="xs mono">{{ job.parser_version or '—' }}</td></tr>
+          <tr><td class="muted xs">Scoring config</td><td class="xs mono">{{ job.scoring_config_version or '—' }}</td></tr>
+        </tbody>
+      </table>
+      {% if job.sources %}
+        <h3 style="margin-top:12px">Source records ({{ job.sources|length }})</h3>
+        <ul class="clean xs">
+          {% for s in job.sources %}
+            <li><span class="mono">{{ s.connector }}</span> · {{ s.role.title() }}
+              <span class="dim">· seen {{ s.first_seen.date() }}</span></li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </div>
+
+    {% if job.application and job.application.status_history %}
+    <div class="card" style="margin-top:12px">
+      <h3>Timeline</h3>
+      <ul class="clean xs">
+        {% for h in job.application.status_history|reverse %}
+          <li>
+            <span class="muted">{{ h.changed_at.strftime('%Y-%m-%d %H:%M') }}</span> —
+            {{ (h.from_status or 'new').replace('_',' ').title() }} → <strong>{{ h.to_status.replace('_',' ').title() }}</strong>
+            {% if h.note %}<div class="dim">{{ h.note }}</div>{% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<h2>Job description</h2>
+<div class="card"><pre style="white-space:pre-wrap;margin:0;font:inherit;font-size:13px">{{ job.description }}</pre></div>
+
+{% endblock %}

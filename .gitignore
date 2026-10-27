@@ -1,0 +1,52 @@
+# Secrets — NEVER commit
+.env
+.env.*
+!.env.example
+
+# Virtualenv
+.venv/
+venv/
+
+# Database
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+build/
+dist/
+
+# Node (future Next.js frontend)
+node_modules/
+.next/
+out/
+
+# Local Claude Code configuration
+.claude/settings.local.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local run artifacts
+logs/
+*.log
+
+# Generated evidence digest is derived; regenerate with `jobhunt evidence digest`.
+# Committed intentionally so the repo is inspectable without a build step.
+# (remove the '!' line below if you prefer it untracked)
+!data/generated/evidence_digest.json
+
+# Generated per-job application documents (PDF/DOCX). Contain personal contact
+# info and are regenerable from the DB + Evidence Bank — never committed.
+data/generated/resumes/
+data/generated/cover_letters/

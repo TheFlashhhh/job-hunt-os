@@ -1,0 +1,75 @@
+# CURATED COMPANY WATCHLIST - PUBLIC DEMO
+#
+# The registry is this curated seed plus `company` rows the app adds (Sources ->
+# Add a company, or `python -m app.cli company add`). The seed is read, never
+# written, by the app.
+#
+# Two flags, deliberately separate:
+#
+#   active                        on the watchlist and wanted in the search universe
+#   automated_collection_enabled  Channel A can actually poll this ATS today
+#
+# The demo ships only FICTIONAL companies with collection disabled, so a fresh
+# clone makes no network request until you add a real public board yourself:
+#
+#   python -m app.cli company add "<Company>" <public ATS board URL>
+#
+# Supported public endpoints: Greenhouse, Lever, Ashby, SmartRecruiters and
+# Workday career sites. No login, cookie or credential is ever used.
+
+schema_version: '1'
+watchlist_version: demo
+activated_date: '2026-10-26'
+company_count: 3
+companies:
+- company_name: Harborline Analytics (Demo)
+  ats_type: GREENHOUSE
+  ats_identifier: harborline-demo
+  ats_capability: DOCUMENTED_PUBLIC_API
+  careers_url: https://example.com/harborline/careers
+  watchlist_scope: BOTH
+  tier: TIER_A
+  priority: 1
+  industry_category: CONSUMER_SAAS
+  target_role_families: [DATA_SCIENTIST, PRODUCT_ANALYTICS]
+  preferred_locations: [Boston, MA]
+  sponsorship_context: UNKNOWN
+  ats_verification: NOT_VERIFIED
+  active: true
+  automated_collection_enabled: false
+  is_fixture: false
+  notes: Fictional demo company. Collection disabled.
+- company_name: Meridian Data Systems (Demo)
+  ats_type: LEVER
+  ats_identifier: meridian-demo
+  ats_capability: DOCUMENTED_PUBLIC_API
+  careers_url: https://example.com/meridian/careers
+  watchlist_scope: BOTH
+  tier: TIER_B
+  priority: 2
+  industry_category: DATA_INFRASTRUCTURE
+  target_role_families: [DATA_ENGINEERING]
+  preferred_locations: [Remote (US)]
+  sponsorship_context: UNKNOWN
+  ats_verification: NOT_VERIFIED
+  active: true
+  automated_collection_enabled: false
+  is_fixture: false
+  notes: Fictional demo company. Collection disabled.
+- company_name: Copperleaf Software (Demo)
+  ats_type: ASHBY
+  ats_identifier: copperleaf-demo
+  ats_capability: DOCUMENTED_PUBLIC_API
+  careers_url: https://example.com/copperleaf/careers
+  watchlist_scope: BOTH
+  tier: TIER_B
+  priority: 2
+  industry_category: HEALTH_TECH
+  target_role_families: [SWE, DATA_ENGINEERING]
+  preferred_locations: [New York, NY]
+  sponsorship_context: UNKNOWN
+  ats_verification: NOT_VERIFIED
+  active: true
+  automated_collection_enabled: false
+  is_fixture: false
+  notes: Fictional demo company. Collection disabled.

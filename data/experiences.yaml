@@ -1,0 +1,54 @@
+# SYNTHETIC DEMO DATA - fictional employers and roles. See candidate.yaml.
+evidence_bank_version: "0.1"
+source_review_version: "demo"
+
+experiences:
+  - experience_id: EXP-01
+    organization: Fernbrook Systems (Fictional)
+    title: Software Engineering Intern
+    title_immutable: true
+    location: Chicago, IL
+    country: United States
+    start_date: "2023-06"
+    end_date: "2024-06"
+    employment_type: INTERNSHIP
+    domain: Fictional B2B scheduling platform
+    technologies: [Python, FastAPI, PostgreSQL, SQL, Docker, pytest, Git]
+    personal_ownership: PRIMARY_OWNER
+    evidence_ids: [EV-FB-01, EV-FB-02, EV-FB-03, EV-FB-04, EV-FB-05]
+    provenance: [DIRECT_USER_CLARIFICATION]
+    confidence: HIGH
+    resume_ready: true
+
+  - experience_id: EXP-02
+    organization: Quillmark Labs (Fictional)
+    title: Data Analyst Intern
+    title_immutable: true
+    location: Chicago, IL
+    country: United States
+    start_date: "2022-06"
+    end_date: "2022-08"
+    employment_type: INTERNSHIP
+    domain: Fictional consumer subscription app
+    technologies: [SQL, Python, pandas, Tableau]
+    personal_ownership: PRIMARY_OWNER
+    evidence_ids: [EV-QL-01, EV-QL-02, EV-QL-03]
+    provenance: [DIRECT_USER_CLARIFICATION]
+    confidence: HIGH
+    resume_ready: true
+
+  - experience_id: EXP-03
+    organization: Northbridge University (Fictional), School of Data Science
+    title: Teaching Assistant, Machine Learning
+    title_immutable: true
+    location: Boston, MA
+    country: United States
+    start_date: "2026-09"
+    end_date: PRESENT
+    employment_type: PART_TIME
+    technologies: [Python, scikit-learn, Jupyter]
+    personal_ownership: PRIMARY_OWNER
+    evidence_ids: [EV-TA-01, EV-TA-02]
+    provenance: [DIRECT_USER_CLARIFICATION]
+    confidence: HIGH
+    resume_ready: true

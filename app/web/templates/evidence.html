@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Evidence Bank · Job Hunt OS{% endblock %}
+{% block body %}
+<h1>Evidence Bank</h1>
+<p class="sub">Read-only view of <span class="mono">data/*.yaml</span> — the authoritative source of truth.
+Version {{ bank.version }}. The application never writes to it.</p>
+
+<form method="get" action="/evidence" class="row" style="margin-bottom:14px">
+  <input name="q" value="{{ q }}" placeholder="Filter by ID, project or technology" style="min-width:320px">
+  <button type="submit">Search</button>
+</form>
+
+<div class="grid two">
+  <div class="card">
+    <h3>Evidence items ({{ evidence|length }})</h3>
+    <div class="scroll"><table>
+      <thead><tr><th>ID</th><th>Project / org</th><th>Ownership</th><th>Resume</th><th>Conf</th></tr></thead>
+      <tbody>{% for e in evidence %}
+        <tr>
+          <td class="mono xs">{{ e.evidence_id }}</td>
+          <td class="xs">{{ e.organization_or_project }}
+            {% if e.technologies %}<div class="dim xs">{{ e.technologies[:6]|join(', ') }}</div>{% endif %}</td>
+          <td class="xs">{% if e.ownership_gated %}<span class="tag t-warn xs">Gated</span>
+            {% else %}<span class="xs muted">{{ e.personal_ownership.replace('_',' ').title() }}</span>{% endif %}</td>
+          <td class="xs">{% if e.resume_ready %}<span class="tag t-good xs">Ready</span>{% else %}<span class="tag t-dim xs">No</span>{% endif %}</td>
+          <td class="xs muted">{{ e.confidence }}</td>
+        </tr>
+      {% endfor %}</tbody>
+    </table></div>
+  </div>
+
+  <div>
+    <div class="card">
+      <h3>Skills by evidence level</h3>
+      <div class="scroll" style="max-height:420px"><table>
+        <thead><tr><th>Skill</th><th>Level</th><th>Weight</th></tr></thead>
+        <tbody>{% for s in skills %}
+          <tr><td class="xs">{{ s.name }}</td>
+            <td class="xs muted">{{ s.evidence_level.replace('_',' ').title() }}</td>
+            <td class="xs"><span class="tag {{ 't-good' if s.fit_weight >= 1.0 else ('t-warn' if s.fit_weight > 0 else 't-bad') }} xs">{{ s.fit_weight }}</span></td></tr>
+        {% endfor %}</tbody>
+      </table></div>
+      <div class="xs dim" style="margin-top:8px">Weight 0.00 means the skill exists in the Bank but contributes nothing to fit scoring and never reaches a resume.</div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <h3>Portfolio gaps ({{ gaps|length }})</h3>
+      <ul class="clean small">{% for g in gaps %}
+        <li><strong class="mono xs">{{ g.gap_id }}</strong> — {{ g.gap }}</li>
+      {% endfor %}</ul>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <h3>Open questions ({{ open_questions|length }})</h3>
+      <ul class="clean small">{% for q in open_questions[:10] %}
+        <li><strong class="mono xs">{{ q.question_id }}</strong> — {{ (q.question or q.subject or '')[:110] }}</li>
+      {% endfor %}</ul>
+      <div class="xs dim" style="margin-top:6px">Resolve these in the YAML, then re-run the validator.</div>
+    </div>
+  </div>
+</div>
+{% endblock %}

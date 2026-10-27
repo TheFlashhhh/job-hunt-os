@@ -1,0 +1,252 @@
+# CHANNEL B — logical search profiles for the bounded A/B experiment.
+#
+# A logical profile describes WHAT we are looking for. Each Actor then receives
+# its own input mapping, because the two candidates do not accept the same JSON
+# — and, as of the 2026-08-19 live re-verification below, not even the field
+# names or enum vocabularies recorded here on 2026-08-18 were fully correct.
+# Keeping profile and mapping separate is what makes the comparison
+# interpretable: if one Actor returns fewer jobs, we can tell whether that is
+# the Actor or the query.
+#
+# Filters an Actor does not support are simply omitted. Downstream deterministic
+# screening normalizes the difference — forcing an unsupported filter into an
+# Actor input would silently change what was asked.
+
+schema_version: "2"
+experiment: AB_TEST_V1
+max_results_per_actor_per_query: 20
+
+profiles:
+  - profile_id: ab_fall_boston
+    lane: FALL_2026_INTERNSHIP_COOP
+    purpose: "Fall 2026 data/ML/AI internships and co-ops in Greater Boston."
+    # "AI/ML Co-op" dropped 2026-08-19 for the worldunboxer canary: each
+    # jobs_titles entry is searched as its own literal term (not a boolean
+    # expression), and a slash-joined compound phrase is a poor literal
+    # search term compared to the other six canonical title phrases.
+    title_concepts:
+      - Data Science Intern
+      - Machine Learning Intern
+      - AI Intern
+      - Data Analyst Intern
+      - Data Engineering Intern
+      - Analytics Intern
+    locations: ["Boston, Massachusetts", "Cambridge, Massachusetts"]
+    recency: PAST_MONTH
+    workplace: ANY
+
+  - profile_id: ab_fall_remote
+    lane: FALL_2026_INTERNSHIP_COOP
+    purpose: "Fall 2026 remote-US data/ML/AI internships and co-ops."
+    title_concepts:
+      - Machine Learning Intern
+      - AI Intern
+      - AI Co-op
+      - Data Science Intern
+      - Analytics Intern
+      - Data Engineering Intern
+    locations: ["United States"]
+    recency: PAST_MONTH
+    workplace: REMOTE
+
+  - profile_id: ab_2027_early_career
+    lane: FULL_TIME_2027
+    purpose: "New-grad / early-career data, ML, AI and analytics roles, US-wide."
+    title_concepts:
+      - Data Scientist
+      - Machine Learning Engineer
+      - AI Engineer
+      - Applied AI Engineer
+      - Product Analytics
+      - Data Engineer
+      - Analytics Engineer
+    locations: ["United States"]
+    recency: PAST_MONTH
+    workplace: ANY
+    experience: ENTRY_LEVEL
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Per-Actor input mapping — LIVE-VERIFIED 2026-08-19 against fetch-actor-details
+# for both Actors (schemaVersion 1 for each). Re-verify before any future run;
+# schema drift is a real, observed operational risk (see D-20 in
+# IMPLEMENTATION_LOG.md) and is additionally checked by
+# app/services/actor_schema_guard.py at pre-run time.
+#
+# Two defects found on 2026-08-18's research snapshot that materially affected
+# safety, corrected here:
+#
+# 1. harvestapi `maxItems` is NOT a flat per-query cap. Per the Actor's own
+#    input schema description, it applies "per each job tile and location
+#    input" — i.e. worst case = (number of jobTitles array entries) ×
+#    (number of locations array entries) × maxItems. To keep the mathematical
+#    worst case at or under max_results_per_actor_per_query regardless of how
+#    many title_concepts a profile lists, all title_concepts are combined into
+#    ONE boolean-OR query string (one array element == one "tile"), and
+#    maxItems is set per profile so that 1 × len(locations) × maxItems <= 20.
+#
+# 2. worldunboxer's recorded field names did not exist on the live schema at
+#    all: `title` (real: `jobs_titles` array or `job_title` legacy string),
+#    `maxEntries` (real: `jobs_entries`, defaults to 1000 if omitted or if an
+#    unrecognized key is sent instead — the schema silently accepts unknown
+#    properties rather than rejecting them, so this was a live budget-overrun
+#    risk, not just a naming mismatch), `workArrangement` (real:
+#    `work_arrangement`), `publishedAt` (real: `posted_within`, human-readable
+#    enum values, not epoch-second strings), `experienceLevel` (real:
+#    `experience`, with a different enum vocabulary that has no exact
+#    "entry-level/new-grad" equivalent — omitted rather than forced).
+#    worldunboxer's `location` field is also a single string, not an array;
+#    multi-location profiles use the `cities` field, which the Actor's own
+#    description says it loops over per-city — so cities count the same as
+#    locations for the worst-case calculation below.
+#
+# 2026-08-19 revision (D-21): harvestapi's status moved to
+# BLOCKED_FULL_PERMISSIONS in approved_apify_actors.yaml — its mapping below
+# is kept for documentation only and is not used to build any live input.
+# worldunboxer's mapping changed from `job_title` (one boolean-OR string) to
+# `jobs_titles` (native array — each entry is searched separately and results
+# are merged, per the Actor's own field description; no boolean-OR hack
+# needed). `jobs_entries` is treated as a RUN-LEVEL cap on that merged,
+# deduplicated result set — not multiplied by title or city count — because
+# its field description carries no per-title/per-location qualifier, unlike
+# harvestapi's explicit multiplicative language, and "merges the results"
+# implies one final capped list. This interpretation is NOT experimentally
+# confirmed; the first live run's actual returned count is the real test.
+# ─────────────────────────────────────────────────────────────────────────────
+actor_input_mappings:
+  harvestapi/linkedin-job-search:
+    title_field: jobTitles
+    title_field_type: array
+    title_mode: boolean_or_single_query   # all title_concepts joined "A" OR "B" OR ... as ONE array element
+    location_field: locations
+    location_field_type: array
+    max_field: maxItems
+    max_field_scope: per_title_query_and_location   # worst_case = 1 (title tiles) * len(locations) * maxItems
+    recency_field: postedLimit
+    recency_values:
+      PAST_MONTH: month
+      PAST_WEEK: week
+    workplace_field: workplaceType
+    workplace_field_type: array
+    workplace_values:
+      REMOTE: remote          # corrected: live enum is lowercase
+    experience_field: experienceLevel
+    experience_field_type: array
+    experience_values:
+      ENTRY_LEVEL: entry      # corrected: live enum is "entry", not "Entry level"
+    sort_field: sortBy
+    sort_default: date
+    known_stale_aliases: []
+    allowed_enum_values:
+      workplaceType: [remote, hybrid, office]
+      employmentType: [full-time, part-time, contract, internship, temporary]
+      experienceLevel: [internship, entry, associate, mid-senior, director, executive]
+      postedLimit: ["1h", "24h", week, month]
+    # Pricing verified live 2026-08-19 via fetch-actor-details (FREE tier, no
+    # tiered pricing on this Actor): $0.001 per "Job details" event (one per
+    # returned record) + a flat $0.001 "Actor start cost" event per run.
+    pricing_usd_per_1k_results: 1.00
+    pricing_per_run_start_usd: 0.001
+
+  worldunboxer/rapid-linkedin-scraper:
+    title_field: jobs_titles
+    title_field_type: array
+    title_mode: native_multi_title   # each title_concept is its own array element; the Actor searches each and merges results — no boolean-OR needed
+    location_field: location
+    location_field_type: string
+    cities_field: cities
+    cities_field_type: array
+    location_mode: single_location_or_country_plus_cities
+    max_field: jobs_entries
+    max_field_scope: run_level   # jobs_entries caps the final MERGED result set, not per-title/per-city (see 2026-08-19 revision note above)
+    recency_field: posted_within
+    recency_values:
+      PAST_MONTH: "Past Month"
+      PAST_WEEK: "Past Week"
+    workplace_field: work_arrangement
+    workplace_field_type: string
+    workplace_values:
+      REMOTE: Remote
+    experience_field: experience
+    experience_field_type: string
+    # No live enum value corresponds to "entry-level / new grad" (real enum is
+    # Intern/Assistant/Junior/Mid-Senior/Director/Executive) — intentionally
+    # left empty so ENTRY_LEVEL is omitted rather than forced onto a
+    # mismatched value. Downstream deterministic eligibility/lane screening
+    # covers this instead.
+    experience_values: {}
+    employment_field: employment_type
+    known_stale_aliases:
+      - maxEntries
+      - workArrangement
+      - publishedAt
+      - experienceLevel
+      - title
+      - titles
+      - locations
+    allowed_enum_values:
+      posted_within: ["Any Time", "Past 24 hours", "Past Week", "Past Month"]
+      work_arrangement: ["On-site", "Remote", "Hybrid"]
+      experience: [Intern, Assistant, Junior, Mid-Senior, Director, Executive]
+      employment_type: [Full-time, Part-time, Contract, Temporary, Volunteer, Internship, Other]
+    # Pricing verified live 2026-08-19 via fetch-actor-details. The FREE tier
+    # (this account's tier) "Result" event price is $0.0005/result — the
+    # $0.00045 figure recorded 2026-08-18 was the DIAMOND (highest-volume
+    # paid) tier price, not the FREE tier this account is actually on.
+    # "Actor Start" is $0.008, charged once per run (one event minimum).
+    pricing_usd_per_1k_results: 0.50
+    pricing_per_run_start_usd: 0.008
+    # Re-verified 2026-08-19 via GET /v2/acts/{id}: the current pricing entry
+    # (effective 2026-08-06) also carries minimalMaxTotalChargeUsd: 0.5 — the
+    # platform may reject a maxTotalChargeUsd call option set below $0.50 for
+    # this Actor. That is a ceiling floor, not a guaranteed charge: with
+    # jobs_entries=20 the actual billed amount should still land near
+    # $0.018, confirmed only by the run's real ApifyRun telemetry.
+    platform_minimum_max_total_charge_usd: 0.50
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Added 2026-08-19 (D-23) for the automation-lab canary. Live-verified via
+  # fetch-actor-details, GET /v2/acts/{id}, and the Actor's own Apify Store
+  # input-schema documentation page (jobType/experienceLevel/datePosted/
+  # sortBy code meanings are not spelled out in the JSON schema itself).
+  # ─────────────────────────────────────────────────────────────────────────
+  automation-lab/linkedin-jobs-scraper:
+    title_field: searchQueries
+    title_field_type: array
+    title_mode: native_multi_title   # each entry searched separately; maxJobs is the true cap, confirmed below
+    location_field: location
+    location_field_type: string
+    max_field: maxJobs
+    max_field_scope: run_level   # Actor's own field description: "Maximum number of unique job listings across ALL queries and start URLs" — a genuine global cap
+    recency_field: datePosted
+    recency_values:
+      PAST_MONTH: r2592000       # confirmed via Store docs: "r2592000=Past month"
+      PAST_WEEK: r604800
+    workplace_field: workplaceType
+    workplace_field_type: string
+    # Codes 1/2/3 are UNVERIFIED (unlike jobType/experienceLevel/datePosted/
+    # sortBy, which the Store docs page confirmed explicitly) — left empty so
+    # this filter is never sent until confirmed, rather than guessed.
+    workplace_values: {}
+    experience_field: experienceLevel
+    experience_field_type: string
+    experience_values:
+      ENTRY_LEVEL: "1"           # confirmed via Store docs: "1=Internship" — this project's ENTRY_LEVEL concept maps to the Actor's Internship code, not a separate "entry level" one
+    employment_field: jobType
+    sort_field: sortBy
+    sort_default: R              # confirmed via Store docs: "R=Most relevant"
+    known_stale_aliases: []
+    allowed_enum_values:
+      jobType: [all, F, P, C, T, I]
+      experienceLevel: [all, "1", "2", "3", "4", "5", "6"]
+      workplaceType: [all, "1", "2", "3"]
+      datePosted: [all, r86400, r604800, r2592000]
+      sortBy: [R, DD]
+    # Pricing live-verified 2026-08-19 via GET /v2/acts/{id}. "Run started"
+    # is confirmed FLAT and one-time (no tiered/per-GB structure in its
+    # pricingPerEvent, unlike worldunboxer/logiover) — pricing_actor_start_
+    # scales_with_memory stays false. No minimalMaxTotalChargeUsd present on
+    # either pricingInfos entry (unlike worldunboxer), so no platform floor
+    # is known to apply.
+    pricing_usd_per_1k_results: 0.575
+    pricing_per_run_start_usd: 0.005
+    pricing_actor_start_scales_with_memory: false

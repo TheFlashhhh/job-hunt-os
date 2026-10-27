@@ -1,0 +1,35 @@
+# Spend guardrails. These are LIMITS, not targets.
+# On threshold: set BUDGET_LIMIT_REACHED and pause OPTIONAL automated work.
+# Never silently exceed. Never disable local application tracking.
+
+budgets:
+  claude:
+    warning_usd_per_month: 15.00
+    hard_usd_per_month: 25.00
+    on_warning: NOTIFY
+    on_hard: PAUSE_OPTIONAL_SCHEDULED_ANALYSIS
+    note: >-
+      High-value interactive analysis is NOT disabled merely because the warning
+      threshold was reached. The hard budget pauses optional scheduled analysis
+      and requires explicit user approval to continue.
+
+  apify:
+    warning_usd_per_month: 3.00
+    hard_usd_per_month: 5.00
+    plan: FREE
+    max_runs_per_day: 4
+    max_records_per_run: 250
+    on_warning: NOTIFY
+    on_hard: PAUSE_OPTIONAL_CHANNEL_B_COLLECTION
+    note: >-
+      Free plan initially. max_records_per_run may rise to 500 only after a
+      validation week AND explicit user approval. Structured free Channel A
+      collection and manual import continue when Channel B is paused.
+
+# Work that must never be paused by a budget threshold.
+never_pause:
+  - manual job import
+  - local application tracking
+  - dashboard
+  - Channel A structured ATS collection (free)
+  - Evidence Bank access

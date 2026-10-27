@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · Job Hunt OS{% endblock %}
+{% block body %}
+
+<div class="between">
+  <div>
+    <h1>Dashboard</h1>
+    <p class="sub">What to apply to, what's due, and how the funnel is moving.</p>
+  </div>
+  <div class="xs dim">
+    Evidence Bank v{{ bank.evidence_bank_version }} ·
+    {{ bank.evidence_items }} evidence · {{ bank.safe_claims }} safe claims ·
+    {{ bank.prohibited_claims }} prohibited
+  </div>
+</div>
+
+<div class="pill-row">
+  {% for value, label in [('ALL','All lanes'),('FALL_2026_INTERNSHIP_COOP','Fall 2026'),('FULL_TIME_2027','Full-time 2027')] %}
+    <a class="pill {% if lane == value %}on{% endif %}" href="/?lane={{ value }}&period={{ period }}">{{ label }}</a>
+  {% endfor %}
+  <span style="width:14px"></span>
+  {% for value, label in [('TODAY','Today'),('WEEK','This week'),('MONTH','This month'),('ALL','All time')] %}
+    <a class="pill {% if period == value %}on{% endif %}" href="/?lane={{ lane }}&period={{ value }}">{{ label }}</a>
+  {% endfor %}
+</div>
+
+<div class="grid kpis">
+  {% for label, value in [
+      ('Jobs found', kpis.jobs_found), ('Eligible', kpis.eligible),
+      ('High priority', kpis.high_priority), ('Shortlisted', kpis.shortlisted),
+      ('Applied', kpis.applied), ('Referral apps', kpis.referral_applications),
+      ('Callbacks', kpis.callbacks), ('Assessments', kpis.online_assessments),
+      ('Interviews', kpis.interviews), ('Final rounds', kpis.final_rounds),
+      ('Rejections', kpis.rejections), ('Offers', kpis.offers) ] %}
+    <div class="kpi"><div class="n">{{ value }}</div><div class="l">{{ label }}</div></div>
+  {% endfor %}
+</div>
+
+<div class="grid three" style="margin-top:22px">
+  <div class="card">
+    <h3>Today — {{ panel.total_actions }} item{{ '' if panel.total_actions == 1 else 's' }} needing action</h3>
+
+    {% macro joblist(items, empty, tone='') %}
+      {% if items %}
+        <ul class="clean">
+        {% for j in items %}
+          <li>
+            <div class="between">
+              <span><a href="/jobs/{{ j.job_id }}">{{ j.title }}</a>
+                <span class="muted small">· {{ j.company_name }}</span></span>
+              {% if j.deadline %}<span class="tag {{ tone or 't-warn' }}">due {{ j.deadline }}</span>{% endif %}
+            </div>
+            <div class="xs dim">{{ j.location_raw or 'Location not stated' }} ·
+              {{ j.search_lane.replace('_',' ').title() }} · {{ j.eligibility_status }}</div>
+          </li>
+        {% endfor %}
+        </ul>
+      {% else %}<div class="empty">{{ empty }}</div>{% endif %}
+    {% endmacro %}
+
+    <h3 style="margin-top:16px">Due today</h3>
+    {{ joblist(panel.due_today, 'Nothing due today.', 't-bad') }}
+
+    <h3 style="margin-top:16px">Closing soon</h3>
+    {{ joblist(panel.due_soon, 'Nothing closing in the next 7 days.') }}
+
+    <h3 style="margin-top:16px">Fall 2026 — needs action</h3>
+    {{ joblist(panel.fall_needs_action, 'No open Fall opportunities awaiting action.') }}
+
+    <h3 style="margin-top:16px">High priority, not yet applied</h3>
+    {{ joblist(panel.high_priority_unapplied, 'Nothing high-priority is waiting.') }}
+
+    {% if panel.authorization_questions %}
+      <h3 style="margin-top:16px">Authorization questions to verify with BU/ISSO</h3>
+      <ul class="clean">
+        {% for j in panel.authorization_questions[:8] %}
+          <li><a href="/jobs/{{ j.job_id }}">{{ j.title }}</a>
+            <span class="muted small">· {{ j.company_name }}</span>
+            <div class="xs dim">{{ j.authorization_state }} — this system never decides authorization.</div></li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    {% if panel.sponsorship_risks %}
+      <h3 style="margin-top:16px">Sponsorship risks</h3>
+      <ul class="clean">
+        {% for j in panel.sponsorship_risks[:8] %}
+          <li><a href="/jobs/{{ j.job_id }}">{{ j.title }}</a>
+            <span class="muted small">· {{ j.company_name }}</span>
+            <span class="tag t-bad">{{ j.sponsorship_role_signal.replace('_',' ').title() }}</span></li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    {% if panel.stale_applications %}
+      <h3 style="margin-top:16px">Stale applications (14+ days, no movement)</h3>
+      <ul class="clean">
+        {% for a in panel.stale_applications[:8] %}
+          <li><a href="/jobs/{{ a.job_id }}">{{ a.job.title }}</a>
+            <span class="muted small">· applied {{ a.applied_at.date() if a.applied_at else '—' }}</span></li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  </div>
+
+  <div>
+    <div class="card">
+      <h3>Application funnel</h3>
+      {% set top = funnel[0].count if funnel and funnel[0].count else 1 %}
+      {% for stage in funnel %}
+        <div style="margin-bottom:9px">
+          <div class="between xs">
+            <span>{{ stage.stage.replace('_',' ').title() }}</span>
+            <span class="muted">{{ stage.count }}{% if stage.conversion_from_previous is not none %}
+              <span class="dim">· {{ stage.conversion_from_previous }}%{% if stage.small_sample %}
+              <span title="Fewer than 10 observations — treat this rate as noise.">*</span>{% endif %}</span>{% endif %}</span>
+          </div>
+          <div class="bar"><i style="width:{{ (100 * stage.count / top) if top else 0 }}%"></i></div>
+        </div>
+      {% endfor %}
+      <div class="xs dim" style="margin-top:10px">* denominator under 10 — not a meaningful rate yet.</div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <h3>Lanes</h3>
+      {% if lane_counts %}
+        <ul class="clean">
+          {% for name, count in lane_counts.items() %}
+            <li class="between"><span class="small">{{ name.replace('_',' ').title() }}</span>
+              <span class="muted">{{ count }}</span></li>
+          {% endfor %}
+        </ul>
+      {% else %}<div class="empty">No jobs yet.</div>{% endif %}
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <h3>Source performance</h3>
+      {% if sources %}
+        <div class="scroll">
+        <table>
+          <thead><tr><th>Source</th><th>Found</th><th>High</th><th>Applied</th></tr></thead>
+          <tbody>
+          {% for s in sources %}
+            <tr><td class="small">{{ s.source }}</td><td>{{ s.jobs_discovered }}</td>
+                <td>{{ s.high_priority }}</td>
+                <td>{{ s.applied }}{% if s.small_sample %}<span class="dim" title="Under 30 applications — no source is 'best' yet.">*</span>{% endif %}</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        </div>
+        <div class="xs dim" style="margin-top:8px">* under 30 applications — too early to rank sources.</div>
+      {% else %}<div class="empty">No sources yet. Import a job to begin.</div>{% endif %}
+    </div>
+  </div>
+</div>
+
+{% if kpis.jobs_found == 0 %}
+  <div class="notice" style="margin-top:22px">
+    <strong>No jobs yet.</strong> Paste a real job description on the
+    <a href="/import">Import</a> page to get an evidence-grounded fit analysis —
+    it works for both the Fall 2026 and Full-time 2027 lanes, with no automated
+    collection required.
+  </div>
+{% endif %}
+
+{% endblock %}

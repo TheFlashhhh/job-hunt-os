@@ -1,0 +1,345 @@
+# ROLE-FAMILY BASE RESUMES
+#
+# A base resume is a COMPLETE, submittable one-page document that exists before
+# any job is considered. Job tailoring PATCHES it; it is not assembled from
+# tailoring output. Generating from accepted recommendations alone produced a
+# half-empty page with two bullets, which is the defect this file fixes.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# THIS FILE SELECTS AND ORDERS. IT NEVER AUTHORS.
+#
+# Every bullet rendered onto a resume is the `text` of a safe claim in
+# data/claims.yaml, verbatim. Every organization, title, location and date
+# comes from experiences.yaml / projects.yaml. Nothing here invents content,
+# and a claim absent from the Evidence Bank cannot be reached from here.
+#
+# Gated claims (personal ownership unresolved) render via their
+# `project_level_alternative`, never as a first-person ownership claim.
+# ─────────────────────────────────────────────────────────────────────────────
+
+schema_version: "1"
+
+#: Sections in render order. Experience precedes projects because paid work
+#: outranks coursework for these targets, and education leads because the
+#: candidate is a current MS student.
+section_order: [EDUCATION, EXPERIENCE, PROJECTS, SKILLS]
+
+#: One page. Bullet budgets keep it there without padding weak material in.
+layout:
+  max_bullets_per_entry: 3
+  #: A TARGETED build allocates in two passes: every entry earns
+  #: `min_bullets_per_entry` first so no real internship disappears, then the
+  #: remaining budget goes to the highest-scoring lines wherever they live —
+  #: up to `max_bullets_per_entry_targeted`. That is what lets the two most
+  #: relevant entries carry four bullets each on a job that rewards them,
+  #: instead of every entry getting a flat three regardless of the posting.
+  min_bullets_per_entry: 2
+  max_bullets_per_entry_targeted: 4
+  # Empirically the densest one-page fit for this Evidence Bank and the
+  # Spark-style template: 15 bullets, leaving 0.79in at the foot against the
+  # reference's own 0.83in. Raising it further changes nothing — 15 is all
+  # the qualifying material this Evidence Bank holds at 3 bullets an entry,
+  # and the page must never be padded with weaker content to fill it.
+  # Re-measure by rendering if the template's spacing changes — the old
+  # value of 11 was measured against the previous, much looser layout and
+  # left nearly two inches of the page empty.
+  # across 5 entries fills the page; 12 spills to a second. Measured by
+  # rendering, not estimated.
+  max_total_bullets: 15
+  min_total_bullets: 8
+  #: Below this many structural entries the document is not a resume.
+  min_entries: 4
+  #: And above this many, it stops being ONE resume. Each entry costs two header
+  #: rows plus spacing on top of its bullets, so the bullet budget alone cannot
+  #: hold the page: adding PRJ-10 and PRJ-11 to the candidate pools produced a
+  #: 7-entry, 15-bullet document that spilled onto a second page. Measured by
+  #: rendering, like max_total_bullets. Only PROJECT entries are ever dropped.
+  #: 5 -> 6 on 2026-10-26 (D-71): the TA role became a third core experience,
+  #: and at 5 it would have taken a project's place - the competition D-71
+  #: removes. Six entries hold the same 15-bullet budget on one page across
+  #: every base and the QA postings; the render-based fitter is the backstop.
+  max_entries: 6
+  #: RELEVANT COURSEWORK. The course list is canonical in the Evidence Bank
+  #: (one coursework item per school). This is a CAP, not a source: seven BU
+  #: titles wrap the line onto a second row and push a bullet off the page,
+  #: and a course list that names everything ranks nothing. Five is the widest
+  #: selection that still sets on one line at this measure.
+  max_coursework_items: 5
+  #: SKILLS have no count cap (D-69). `max_skills_per_group: 7` used to cut
+  #: each group after an A-Z sort, so a new skill could evict an older,
+  #: equally true one. Which skills render is now a relevance decision
+  #: (`core_skills` and `skill_inference` in role_targeting.yaml, D-70); page
+  #: fit removes core skills before a project, and never an asked-for one.
+
+#: EXPERIENCE BULLET DEPTH (D-71)
+#:
+#: Every experience is core: it appears on every base and every tailored page,
+#: and never competes with a project for an entry slot. What may vary by role is
+#: how many lines it carries. An experience listed here takes its floor and cap
+#: from the winning archetype instead of the layout's usual 2..4.
+#:
+#: The AI Ethics teaching assistantship is current, paid US work, so it is on
+#: every page with at least one line. Its depth follows how much of it the role
+#: wants: the LLM safety-evaluation prototype on an applied-AI page, one compact
+#: line on a backend or pipeline page. `engaged_max` raises the floor and cap
+#: to that many lines when
+#: the posting itself pulls on its material (LLM evaluation, AI safety,
+#: technical communication) - measured as the strongest requirement/keyword
+#: match across its lines, the same signal the rest of the ranking uses.
+#: Page fitting can trim an extra line but never removes the entry.
+experience_bullet_depth:
+  EXP-03:
+    default: {min: 1, max: 2}
+    #: keyword_alignment is overlap/12, so 0.3 = four or more of the posting's own
+    #: terms in one TA line. Measured 2026-10-26: AI Engineer 0.42, Responsible AI
+    #: 0.33, LLM-eval backend 0.67 - against plain backend 0.17, SWE/DE 0.0.
+    engagement_threshold: 0.3
+    archetypes:
+      #: An AI posting that asks for LLM evaluation or AI safety is owed all
+      #: three - the prototype, its safety controls and the teaching line -
+      #: ahead of any project's third bullet.
+      APPLIED_AI_SOFTWARE: {min: 2, max: 3, engaged_max: 3}
+      MACHINE_LEARNING_ENGINEERING: {min: 1, max: 2}
+      DATA_SCIENCE: {min: 1, max: 2}
+      PRODUCT_ANALYTICS: {min: 1, max: 2}
+      SOFTWARE_ENGINEERING: {min: 1, max: 1, engaged_max: 2}
+      DATA_ENGINEERING: {min: 1, max: 1, engaged_max: 2}
+      ANALYTICS_ENGINEERING: {min: 1, max: 1, engaged_max: 2}
+
+#: PROFESSIONAL SUMMARY
+#:
+#: `summary_template` is an authored sentence frame. `summary_skills` names the
+#: skills it may mention; each is looked up in skills.yaml and dropped unless
+#: the Bank marks it resume-usable, so a JD asking for RAG or Tableau cannot
+#: put either into the summary. {degree_short} and {institution} come from
+#: candidate.yaml. Nothing here generates a claim.
+
+#: Display aliases for the summary line ONLY. The resume-usable gate always
+#: runs against the real skills.yaml name on the left; the alias just avoids
+#: printing "ETL / ELT / data pipelines" mid-sentence. An alias grants no
+#: permission — a skill the Bank rejects is dropped before it is ever aliased.
+summary_skill_aliases:
+  # Mid-sentence display forms. The Bank's canonical names are Title Case
+  # because they are list labels; inside a sentence they read as proper nouns
+  # that do not exist ("Experienced in ... Data quality monitoring").
+  "Data quality monitoring": "data-quality monitoring"
+  "Schema validation": "schema validation"
+  "Event-driven ingestion": "event-driven ingestion"
+  "Neural networks": "neural networks"
+  "Model evaluation": "model evaluation"
+  "Predictive modeling": "predictive modelling"
+  "pandas / NumPy": "pandas/NumPy"
+  "Spark / PySpark": "Spark"
+  "ETL / ELT / data pipelines": "data pipelines"
+  "Git / GitHub / VS Code / Visual Studio / JIRA": "Git/GitHub"
+  "Kubernetes / OpenShift / Tekton / CronJobs / ConfigMaps / Secrets / PVCs / RBAC": "Kubernetes"
+  "SQL Server / Oracle / MySQL": "SQL Server"
+  "REST APIs / Postman / Swagger": "REST APIs"
+  "Product analytics / event-log analysis": "product analytics"
+  "Retention / engagement / funnel and drop-off analysis": "retention and funnel analysis"
+  "Data cleaning / feature engineering": "feature engineering"
+  "Client delivery / stakeholder presentation": "client-facing analytics"
+  "MSTest / unit testing / mocking": "unit testing"
+  "Agile / sprint participation": "Agile delivery"
+  "matplotlib / seaborn / Jupyter": "matplotlib/seaborn"
+  "Regression / classification / clustering": "ML modelling"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# RELEVANT COURSEWORK
+#
+# `coursework_priority` ORDERS courses the Evidence Bank already holds. It is
+# not a source of courses: a name here that the Bank does not carry is ignored,
+# and the Bank's own canonical title (or its explicitly permitted alias) is what
+# renders. A posting asking for a subject the candidate never took cannot put it here.
+#
+# The list below is the UNTARGETED order for each base. A targeted build uses
+# the winning archetype's own order from role_targeting.yaml instead.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ─────────────────────────────────────────────────────────────────────────────
+# RESUME LIBRARY (2026-09-24)
+#
+# Every base below can also be generated on its own, with no job - previewed and
+# downloaded from /resumes. Two fields exist for that and for nothing else:
+#
+#   display_name       what the person sees and what the download is called.
+#                      Never an internal ID.
+#   library_archetype  which role_targeting.yaml archetype positions the base
+#                      when there is no posting. Its summary frame and skill
+#                      groups apply, with NO job-description signal, so the
+#                      document is the strongest general version for the family:
+#                      role relevance, evidence strength, X-Y-Z quality and the
+#                      user's standing preferences decide. Same builder, same
+#                      claim gate and the same one-page fitting as a job resume.
+#
+# "Best for" on the library page is derived from role_targeting.yaml - every
+# archetype whose resume_base names this base - so there is no second taxonomy.
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: PRJ-06 Job Hunt OS (D-72, 2026-10-26) is appended to EVERY pool below. It is
+#: a candidate, never a fixture: the targeting engine decides per base and per
+#: posting, and it is expected to win on software and data-engineering pages
+#: and lose to the modelling projects on data-science ones.
+bases:
+  - name: DS_ML_AI
+    display_name: "Data Science / Machine Learning"
+    library_archetype: DATA_SCIENCE
+    #: Course ORDER for this family. Names resolve against the Evidence Bank;
+    #: anything it does not carry is dropped.
+    coursework_priority:
+      - Mathematical Foundations of Data Science and Machine Learning
+      - Deep Learning for Data Science
+      - Tools for Data Science
+      - Machine Learning in Healthcare
+      - Data Engineering at Scale
+    description: "Data Science / Machine Learning / AI roles."
+    summary_template: >-
+      {degree_short} candidate at {institution} with hands-on experience building data science, machine learning and software components for real-world technical projects. Experienced in {skills}.
+    summary_skills: ["Python", "SQL", "pandas / NumPy", "scikit-learn", "PyTorch", "ETL / ELT / data pipelines", "Kafka", "Spark / PySpark", "Docker", "Git / GitHub / VS Code / Visual Studio / JIRA"]
+    #: Claim role_families that count as relevant for this base, best first.
+    claim_role_families: [DATA_SCIENTIST, ML_ENGINEER, AI_ENGINEER, AI_SOFTWARE_ENGINEER]
+    #: Every experience here is CORE and holds its slot on every page (D-71).
+    #: Rendered newest first whatever the order here.
+    experiences: [EXP-03, EXP-01, EXP-02]
+    #: PRJ-10 and PRJ-11 added 2026-08-23 when they became resume-eligible;
+    #: PRJ-13 (BCG X job simulation) added 2026-09-16.
+    #: This list is the CANDIDATE POOL, not a render list - the bullet budget and
+    #: per-job scoring still decide what reaches the page. Order matters only to an
+    #: UNTARGETED build, which simply takes the leading entries; a targeted build
+    #: re-ranks the whole pool against the posting. A new entry is therefore
+    #: appended BELOW the existing leaders, so adding one to the pool never
+    #: silently rewrites the untargeted document.
+    projects: [PRJ-01, PRJ-10, PRJ-02, PRJ-13, PRJ-11, PRJ-03, PRJ-06]
+    skill_groups:
+      - label: Languages
+        categories: [PROGRAMMING, SQL]
+      - label: Machine Learning
+        categories: [MACHINE_LEARNING, DEEP_LEARNING, NLP, COMPUTER_VISION]
+      - label: Data & Analytics
+        categories: [DATA_ANALYSIS, STATISTICS, ANALYTICS, DATA_ENGINEERING]
+      - label: Tools & Platforms
+        categories: [DEVTOOLS, CLOUD, DATABASES]
+
+  - name: ANALYTICS_PRODUCT
+    display_name: "Product & Data Analytics"
+    library_archetype: PRODUCT_ANALYTICS
+    #: Course ORDER for this family. Names resolve against the Evidence Bank;
+    #: anything it does not carry is dropped.
+    coursework_priority:
+      - People Analytics
+      - Tools for Data Science
+      - Mathematical Foundations of Data Science and Machine Learning
+      - Data Engineering at Scale
+      - Machine Learning in Healthcare
+    description: "Data Analyst / Product Analytics roles."
+    summary_template: >-
+      {degree_short} candidate at {institution} with hands-on experience turning product and operational data into decisions for real-world technical projects. Experienced in {skills}.
+    summary_skills: ["SQL", "Python", "pandas / NumPy", "Product analytics / event-log analysis", "Retention / engagement / funnel and drop-off analysis", "Statistics / Probability / Linear Algebra", "Client delivery / stakeholder presentation", "Streamlit"]
+    claim_role_families: [PRODUCT_ANALYTICS, DATA_ANALYST, DATA_SCIENTIST, TECHNICAL_PRODUCT]
+    #: Every experience here is CORE and holds its slot on every page (D-71).
+    #: Rendered newest first whatever the order here.
+    experiences: [EXP-03, EXP-01, EXP-02]
+    #: PRJ-11 and PRJ-10 added 2026-08-23, PRJ-13 on 2026-09-16. Candidate pool,
+    #: not a render list.
+    projects: [PRJ-02, PRJ-11, PRJ-01, PRJ-13, PRJ-10, PRJ-03, PRJ-06]
+    skill_groups:
+      - label: Languages
+        categories: [SQL, PROGRAMMING]
+      - label: Analytics
+        categories: [PRODUCT_ANALYTICS, DATA_ANALYSIS, ANALYTICS, STATISTICS]
+      - label: Data
+        categories: [DATA_ENGINEERING, DATABASES, ANALYTICS_ENGINEERING]
+      - label: Tools & Platforms
+        categories: [VISUALIZATION, DEVTOOLS, CLOUD]
+
+  - name: DATA_ENGINEERING
+    display_name: "Data Engineering"
+    library_archetype: DATA_ENGINEERING
+    #: Course ORDER for this family. Names resolve against the Evidence Bank;
+    #: anything it does not carry is dropped.
+    coursework_priority:
+      - Data Engineering at Scale
+      - Tools for Data Science
+      - Mathematical Foundations of Data Science and Machine Learning
+      - Deep Learning for Data Science
+      - Machine Learning in Healthcare
+    description: "Data Engineering / Analytics Engineering roles."
+    summary_template: >-
+      {degree_short} candidate at {institution} with hands-on experience building ingestion, transformation and data-quality components for real-world technical projects. Experienced in {skills}.
+    summary_skills: ["Python", "SQL", "Kafka", "Spark / PySpark", "ETL / ELT / data pipelines", "Schema validation", "Data quality monitoring", "Docker", "Kubernetes / OpenShift / Tekton / CronJobs / ConfigMaps / Secrets / PVCs / RBAC", "PostgreSQL"]
+    claim_role_families: [DATA_ENGINEERING, ANALYTICS_ENGINEERING, DATA_SCIENTIST]
+    #: Every experience here is CORE and holds its slot on every page (D-71).
+    #: Rendered newest first whatever the order here.
+    experiences: [EXP-03, EXP-01, EXP-02]
+    projects: [PRJ-01, PRJ-02, PRJ-03, PRJ-06]
+    skill_groups:
+      - label: Languages
+        categories: [PROGRAMMING, SQL]
+      - label: Data Engineering
+        categories: [DATA_ENGINEERING, STREAMING, DATABASES, ANALYTICS_ENGINEERING]
+      - label: Cloud & Tools
+        categories: [CLOUD, DEVTOOLS, BACKEND]
+      - label: Analysis
+        categories: [DATA_ANALYSIS, ANALYTICS, STATISTICS]
+
+  - name: APPLIED_AI_SOFTWARE
+    display_name: "Applied AI / AI Software Engineering"
+    library_archetype: APPLIED_AI_SOFTWARE
+    #: Course ORDER for this family. Names resolve against the Evidence Bank;
+    #: anything it does not carry is dropped.
+    coursework_priority:
+      - Deep Learning for Data Science
+      - Tools for Data Science
+      - Mathematical Foundations of Data Science and Machine Learning
+      - Data Engineering at Scale
+      - AI Ethics
+    description: "AI Software Engineer / Applied AI roles."
+    summary_template: >-
+      {degree_short} candidate at {institution} with hands-on experience building applied AI and backend software components for real-world technical projects. Experienced in {skills}.
+    summary_skills: ["Python", "SQL", "PyTorch", "TensorFlow / Keras", "Neural networks", "REST APIs / Postman / Swagger", "Docker", "Git / GitHub / VS Code / Visual Studio / JIRA"]
+    claim_role_families: [AI_SOFTWARE_ENGINEER, AI_ENGINEER, ML_ENGINEER, SWE]
+    #: Every experience here is CORE and holds its slot on every page (D-71).
+    #: Rendered newest first whatever the order here.
+    experiences: [EXP-03, EXP-01, EXP-02]
+    #: PRJ-13 added 2026-09-16: its modelling and evaluation work is on-target for
+    #: an applied-AI reader. Data engineering and software bases are deliberately
+    #: left alone - a churn classifier is not pipeline or backend evidence.
+    projects: [PRJ-01, PRJ-03, PRJ-02, PRJ-13, PRJ-06]
+    skill_groups:
+      - label: Languages
+        categories: [PROGRAMMING, SQL]
+      - label: AI & ML
+        categories: [MACHINE_LEARNING, DEEP_LEARNING, NLP, COMPUTER_VISION, AI_LLM]
+      - label: Engineering
+        categories: [SOFTWARE_ENGINEERING, BACKEND, API, TESTING]
+      - label: Cloud & Tools
+        categories: [CLOUD, DEVTOOLS, DATABASES]
+
+  - name: OPTIONAL_SOFTWARE
+    display_name: "Software Engineering"
+    library_archetype: SOFTWARE_ENGINEERING
+    #: Course ORDER for this family. Names resolve against the Evidence Bank;
+    #: anything it does not carry is dropped.
+    coursework_priority:
+      - Tools for Data Science
+      - Data Engineering at Scale
+      - Deep Learning for Data Science
+      - Mathematical Foundations of Data Science and Machine Learning
+    description: "Backend, API, database and data-platform software roles."
+    summary_template: >-
+      {degree_short} candidate at {institution} with hands-on experience building and testing backend software for real-world technical projects. Experienced in {skills}.
+    summary_skills: ["Python", "SQL", "C#", ".NET / Entity Framework", "REST APIs / Postman / Swagger", "MSTest / unit testing / mocking", "Git / GitHub / VS Code / Visual Studio / JIRA", "Docker"]
+    claim_role_families: [SWE, AI_SOFTWARE_ENGINEER, DATA_ENGINEERING]
+    #: Every experience here is CORE and holds its slot on every page (D-71).
+    #: Rendered newest first whatever the order here.
+    experiences: [EXP-03, EXP-01, EXP-02]
+    projects: [PRJ-01, PRJ-03, PRJ-02, PRJ-06]
+    skill_groups:
+      - label: Languages
+        categories: [PROGRAMMING, SQL]
+      - label: Engineering
+        categories: [SOFTWARE_ENGINEERING, BACKEND, API, TESTING]
+      - label: Data
+        categories: [DATA_ENGINEERING, DATABASES]
+      - label: Tools & Platforms
+        categories: [DEVTOOLS, CLOUD]

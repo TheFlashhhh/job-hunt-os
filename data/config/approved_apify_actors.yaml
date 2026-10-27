@@ -1,0 +1,52 @@
+# PUBLIC EXPORT VERSION. The private registry also records evaluation history
+# (runs, datasets, search inputs); this copy keeps only the policy. NO Actor
+# is approved, so no Apify Actor can run.
+schema_version: "2"
+researched_at: "2026-08-18"
+live_reverified_at: "2026-08-19"
+status: AWAITING_USER_APPROVAL_AND_AB_TEST
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Budget policy. Enforced BEFORE an Actor launches, never after.
+# ─────────────────────────────────────────────────────────────────────────────
+budget:
+  warning_usd_per_month: 3.00
+  hard_limit_usd_per_month: 5.00
+  max_runs_per_day: 4
+  max_records_per_run: 250
+  # Raising to 500 requires validation AND explicit approval.
+  max_records_per_run_ceiling: 500
+  notes: >-
+    Free-plan posture. The hard limit pauses OPTIONAL work only; manual import,
+    application tracking, the dashboard, Channel A collection and Evidence Bank
+    access are never paused by an Apify budget state.
+
+# ─────────────────────────────────────────────────────────────────────────────
+actors: []
+
+forbidden_capabilities:
+  - LINKEDIN_LOGIN_OR_PASSWORD
+  - LINKEDIN_SESSION_COOKIE
+  - CONNECTION_REQUESTS
+  - DIRECT_MESSAGES
+  - PROFILE_ACTIONS
+  - FOLLOWING_OR_ENDORSING
+  - EASY_APPLY_AUTOMATION
+  - APPLICATION_SUBMISSION
+  - PERSONAL_ACCOUNT_CRAWLING
+
+# ─────────────────────────────────────────────────────────────────────────────
+# LinkedIn risk classification. Stated in these exact terms — a no-cookie Actor
+# lowers ONE risk and eliminates none of the others.
+# ─────────────────────────────────────────────────────────────────────────────
+linkedin_risk_classification:
+  personal_account_linkage_risk: LOWER_WHEN_NO_LOGIN_OR_COOKIES_SUPPLIED
+  platform_terms_access_risk: PRESENT
+  actor_reliability_risk: PRESENT
+  scope: "Low-volume job discovery only. No personal LinkedIn account automation."
+
+risk_posture: >-
+  A no-cookie, no-login Actor removes the direct credential and account-linkage
+  risk. It does NOT eliminate LinkedIn terms-of-service risk, access-policy
+  risk, technical blocking risk, or Actor reliability risk. Channel B is job
+  DISCOVERY only; no LinkedIn account automation of any kind is in scope.

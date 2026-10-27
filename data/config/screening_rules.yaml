@@ -1,0 +1,51 @@
+# Deterministic screening and deduplication policy.
+# Tunable without redeploying. Screening RECORDS a verdict; it never deletes.
+
+screening:
+  allow_unknown_location: true
+
+  # Seniority above these bands is screened out of both lanes.
+  reject_experience_levels: [SENIOR, STAFF_PLUS]
+
+  # Years-of-experience tolerance before a job is flagged rather than rejected.
+  years_experience_soft_ceiling: 5
+  years_experience_hard_ceiling: 6
+
+  # Fall lane geography. Roles outside these are FLAGGED, not deleted,
+  # and the user can override to keep any of them.
+  fall_high_priority_locations:
+    - Boston
+    - Cambridge
+    - Greater Boston
+    - Remote (US)
+  fall_acceptable:
+    - Greater Boston hybrid compatible with an academic schedule
+  fall_generally_incompatible:
+    - On-site requiring relocation away from Boston during the semester
+
+  # Fall schedule plausibility (NOT an authorization judgement).
+  fall_weekly_hours_comfortable: 20
+  fall_weekly_hours_demanding: 30
+
+deduplication:
+  fingerprint_hamming_threshold: 3
+  repost_gap_days: 14
+  fuzzy_same_job_confidence: 0.85
+  location_token_overlap: 0.6
+
+legitimacy:
+  # A non-default legitimacy status REQUIRES stored evidence.
+  # Never accuse a company without a concrete signal.
+  repost_count_uncertain: 3
+  require_evidence_for_non_default: true
+
+# Categories a change-detection pass maps onto, so only affected downstream
+# analyses re-run when a job's content hash changes.
+change_categories:
+  - description
+  - salary
+  - deadline
+  - location
+  - sponsorship_wording
+  - title
+  - employment_type

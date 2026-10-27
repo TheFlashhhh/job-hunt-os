@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Import · Job Hunt OS{% endblock %}
+{% block body %}
+<h1>Import a job</h1>
+<p class="sub">Works for both lanes with no automated collection. Paste a JD and get an evidence-grounded analysis.</p>
+
+{% if result %}
+  {% if result.kind == 'error' %}
+    <div class="notice bad"><strong>Import failed.</strong>
+      <ul class="clean small">{% for e in result.errors %}<li>{{ e }}</li>{% endfor %}</ul></div>
+  {% elif result.kind == 'single' %}
+    <div class="notice good">
+      <strong>{{ 'Imported' if result.created else ('Unchanged' if result.unchanged else 'Updated') }}.</strong>
+      {% if result.job_id %}<a href="/jobs/{{ result.job_id }}">Open the analysis →</a>{% endif %}
+      {% if result.messages %}<ul class="clean small">{% for m in result.messages %}<li>{{ m }}</li>{% endfor %}</ul>{% endif %}
+    </div>
+  {% else %}
+    <div class="notice good"><strong>Bulk import complete.</strong>
+      {{ result.created }} created · {{ result.updated }} updated · {{ result.unchanged }} unchanged.
+      {% if result.errors %}<ul class="clean small">{% for e in result.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+    </div>
+  {% endif %}
+{% endif %}
+
+<div class="grid two">
+  <form method="post" action="/import" class="card">
+    <h3>Single job — paste a description</h3>
+    <div class="row">
+      <div style="flex:1"><label>Company</label><input name="company_name" style="width:100%" placeholder="Northwind Analytics"></div>
+      <div style="flex:1"><label>Title</label><input name="title" style="width:100%" placeholder="Data Science Intern, Fall 2026"></div>
+    </div>
+    <div class="row">
+      <div style="flex:1"><label>Location</label><input name="location" style="width:100%" placeholder="Boston, MA"></div>
+      <div style="flex:1"><label>Deadline (YYYY-MM-DD)</label><input name="deadline" style="width:100%" placeholder="2026-09-15"></div>
+    </div>
+    <div class="field"><label>Posting URL</label><input name="url" style="width:100%" placeholder="https://boards.greenhouse.io/company/jobs/1234567"></div>
+    <div class="field"><label>Job description</label>
+      <textarea name="description" rows="16" placeholder="Paste the full job description here…"></textarea></div>
+    <div class="xs dim" style="margin-bottom:10px">
+      Leave company and title blank to let the parser infer them from the paste.
+      A Greenhouse / Lever / Ashby URL is auto-resolved to its canonical ATS identity.
+    </div>
+    <button type="submit">Import &amp; analyze</button>
+  </form>
+
+  <form method="post" action="/import" class="card">
+    <h3>Bulk — JSON or CSV</h3>
+    <div class="field"><label>Format</label>
+      <select name="bulk_format"><option value="json">JSON</option><option value="csv">CSV</option></select></div>
+    <div class="field"><label>Payload</label>
+      <textarea name="bulk_payload" rows="20" placeholder='[{"company":"Acme","title":"Data Analyst","location":"Boston, MA","description":"..."}]'></textarea></div>
+    <div class="xs dim" style="margin-bottom:10px">
+      Recognised keys: company/company_name/employer · title/job_title/position/role ·
+      description/jd/job_description · location/city · url/link/apply_url ·
+      posted_date/posted · deadline/closes. Rows missing company or title are reported, not silently dropped.
+    </div>
+    <button type="submit">Import batch</button>
+  </form>
+</div>
+
+<div class="notice" style="margin-top:16px">
+  <strong>External job text is untrusted.</strong> Every import is stripped of hidden characters
+  and HTML, capped in length, and treated strictly as data — never as instructions. Any
+  instruction-like content is flagged on the raw record rather than followed.
+</div>
+{% endblock %}

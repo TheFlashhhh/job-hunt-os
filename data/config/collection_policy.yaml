@@ -1,0 +1,121 @@
+# COLLECTION CADENCE AND FRESHNESS POLICY
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# THIS FILE DESCRIBES INTENT. IT DOES NOT RUN ANYTHING.
+#
+# Job Hunt OS is a local Windows application. There is no in-process scheduler
+# and there deliberately is not one: a background thread inside `uvicorn` can
+# only run while the machine is awake and the server happens to be up, so it
+# would produce a "collection is scheduled" claim the product could not keep.
+#
+# The honest local answer is the operating system's scheduler. `app.cli` is
+# written to be Task Scheduler-safe — idempotent, resumable, catch-up safe —
+# and `python -m app.cli schedule` prints (and, only when asked, registers) the
+# task. Nothing here registers anything on its own.
+#
+# What this file DOES decide: how often each kind of collection is *supposed*
+# to run, and therefore at what age the data stops being trustworthy.
+# ─────────────────────────────────────────────────────────────────────────────
+
+schema_version: "1"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# The three cadences, kept separate because they cost different things.
+# ─────────────────────────────────────────────────────────────────────────────
+cadences:
+  # Cheap, canonical, frequent. Public ATS endpoints cost $0 and the
+  # content-hash gate means an unchanged board is nearly free, so the limit is
+  # politeness to someone else's servers rather than money.
+  STRUCTURED_ATS_REFRESH:
+    interval_hours: 6
+    scope: A_ATS_WATCHLIST
+    cost: FREE
+    enabled: true
+    description: >-
+      Poll every monitored Greenhouse / Lever / Ashby / SmartRecruiters /
+      Workday board. This is the cadence the freshness indicator is measured
+      against.
+
+  # Potentially paid, and currently paused. See context/EXPERIMENT_LOG.md and
+  # context/CHANNEL_B_APIFY_POSTMORTEM.md — three canaries, three rejections.
+  BROAD_DISCOVERY:
+    interval_hours: 168
+    scope: B_BROAD_DISCOVERY
+    cost: PAID
+    enabled: false
+    status: PAUSED_AFTER_NEGATIVE_FEASIBILITY_TESTS
+    description: >-
+      Discovery beyond the monitored boards. No Actor is approved, so this
+      cadence describes a channel that does not currently run.
+
+  # Verification rather than discovery: which of the jobs already held are
+  # still actually open. Structured collection already ages jobs out on every
+  # successful poll; this is the deeper sweep for sources that went quiet.
+  FULL_RECONCILIATION:
+    interval_hours: 24
+    scope: LIFECYCLE
+    cost: FREE
+    enabled: true
+    description: >-
+      Confirm open/closed state across the whole corpus, including companies
+      whose board did not answer during a normal refresh.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Provider rollout switches (Discovery Coverage V2).
+#
+# `enabled: false` takes every company on that provider out of the sweep
+# without touching the registry, so a connector can land — or be switched off
+# if a source starts misbehaving — without a code change. A provider missing
+# here is enabled.
+#
+# This is the provider-level switch only. The canary gate is per company: a
+# registry company starts EXPERIMENTAL and is polled only when named
+# (`collect --company X`) until its canary passes and it is promoted to ACTIVE.
+# ─────────────────────────────────────────────────────────────────────────────
+providers:
+  GREENHOUSE:
+    enabled: true
+  ASHBY:
+    enabled: true
+  SMARTRECRUITERS:
+    enabled: true
+  LEVER:
+    enabled: true
+  WORKDAY:
+    # The career site's own public JSON endpoint. Not a documented API: if it
+    # changes shape, switch this off and the rest of collection carries on.
+    enabled: true
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Freshness. Measured from the last SUCCESSFUL structured collection, against
+# the STRUCTURED_ATS_REFRESH interval above — not from an absolute clock, so
+# changing the cadence changes the thresholds with it.
+#
+# FRESH   within one interval plus a grace period for a missed wake-up
+# AGING   within four intervals — worth knowing, not yet misleading
+# STALE   beyond that. The shortlist is now a claim about the past.
+# ─────────────────────────────────────────────────────────────────────────────
+freshness:
+  fresh_within_intervals: 1.4
+  aging_within_intervals: 4.0
+  #: A collection still marked RUNNING after this long is assumed to have died
+  #: with its process, and the next request may take the lock over. Generous on
+  #: purpose: the last full sweep of the watchlist took just over 50 minutes.
+  stale_lock_hours: 3
+  #: Runs started within this many minutes of each other are reported as one
+  #: sweep. The watchlist scale-out ran in checkpointed tiers, so "the last
+  #: run" means the last GROUP of runs, not one company.
+  sweep_gap_minutes: 45
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Windows Task Scheduler. Printed by `python -m app.cli schedule`, registered
+# only by `--register`, which asks first. Never registered automatically.
+# ─────────────────────────────────────────────────────────────────────────────
+windows_task:
+  task_name: JobHuntOS-StructuredCollection
+  #: Task Scheduler runs this every `interval_hours`, catching up on the next
+  #: wake if the machine was asleep. There is no catch-up storm to guard
+  #: against: a repeat poll of an unchanged board writes nothing.
+  start_time: "07:00"
+  wake_to_run: false
+  run_only_if_network_available: true
